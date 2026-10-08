@@ -30,7 +30,7 @@ export function useSuggestions(k = 3) {
 export function useRegisterInjection() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: { microzone_id: string; confirm_not_recovered: boolean; origin: InjectionOrigin }) =>
+    mutationFn: (input: { microzone_id: string; confirm_not_recovered: boolean; origin: InjectionOrigin; applied_at?: string | null }) =>
       apiFetch<InjectionResult>('/injections', { method: 'POST', body: input }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: mapKey })

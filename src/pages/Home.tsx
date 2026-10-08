@@ -1,6 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../lib/auth'
+import BodyMap from '../components/BodyMap'
+import type { MacroCode } from '../components/BodyMap'
+import { parseMacro, parseSide } from '../components/BodyMap'
+import { MicrozoneSheet, ZoomGrid } from '../components/MicrozoneSheet'
 import { useHistory, statusBadge, formatAppliedAt } from '../lib/history'
 import type { InjectionOut } from '../lib/history'
 import { useSetGridSize } from '../lib/settings'
@@ -8,9 +12,7 @@ import type { GridSize } from '../lib/settings'
 import { ApiError } from '../lib/api'
 import {
   describeLocation,
-  formatHours,
   useBodyMap,
-  useRegisterInjection,
   useSuggestions,
   useUndoInjection,
 } from '../lib/injections'
@@ -42,21 +44,16 @@ const COLOR_LABEL: Record<CellOut['color'], string> = {
   GREEN: 'verde, disponible',
 }
 
-type Warning = {
-  cell: CellOut
-  suggestedId: string | null
-  serverSaid: boolean
-}
-
 function MacroCard({
   zone,
-  pendingId,
+  gridSize,
   onTap,
 }: {
   zone: MapResponse['zones'][number]
-  pendingId: string | null
+  gridSize: number
   onTap: (cell: CellOut) => void
 }) {
+  const cols = gridSize <= 2 ? 2 : gridSize <= 4 ? 4 : 3
   return (
     <section
       aria-label={zone.label}
@@ -69,16 +66,15 @@ function MacroCard({
             <p className="mb-1 text-[12px] font-semibold text-black/40 dark:text-white/40">
               {s.side === 'I' ? 'Izquierdo' : 'Derecho'}
             </p>
-            <div className="grid grid-cols-4 gap-1.5" role="group" aria-label={`${zone.label} lado ${s.side}`}>
+            <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} role="group" aria-label={`${zone.label} lado ${s.side}`}>
               {s.cells.map((cell) => (
                 <button
                   key={cell.id}
                   type="button"
-                  disabled={pendingId !== null}
                   aria-label={`Microzona ${cell.id}, ${COLOR_LABEL[cell.color]}`}
                   data-microzone={cell.id}
                   onClick={() => onTap(cell)}
-                  className={`touch-target pressable flex items-center justify-center rounded-xl text-[13px] font-bold disabled:opacity-60 ${CELL_STYLE[cell.color]} ${pendingId === cell.id ? 'animate-pulse' : ''}`}
+                  className={`touch-target pressable flex items-center justify-center rounded-xl text-[13px] font-bold ${CELL_STYLE[cell.color]}`}
                 >
                   <span aria-hidden="true">{CELL_ICON[cell.color]}</span>
                 </button>
@@ -192,60 +188,23 @@ export default function Home() {
   const { user, logout } = useAuth()
   const mapQuery = useBodyMap()
   const suggestionsQuery = useSuggestions(3)
-  const register = useRegisterInjection()
   const undo = useUndoInjection()
   const setGrid = useSetGridSize()
   const [settingsError, setSettingsError] = useState<string | null>(null)
 
-  const [warning, setWarning] = useState<Warning | null>(null)
+  const [mapView, setMapView] = useState<'body' | 'list'>('body')
+  const [zoom, setZoom] = useState<{ macro: MacroCode; side: 'I' | 'D'; highlight: string | null } | null>(null)
+  const [sheetCell, setSheetCell] = useState<CellOut | null>(null)
   const [toast, setToast] = useState<{ id: string; text: string; canUndo: boolean } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const topSuggestion = suggestionsQuery.data?.suggestions[0] ?? null
-  const cellsById = useMemo(() => {
-    const index = new globalThis.Map<string, CellOut>()
-    for (const z of mapQuery.data?.zones ?? []) for (const s of z.sides) for (const c of s.cells) index.set(c.id, c)
-    return index
-  }, [mapQuery.data])
 
-  function showToast(id: string, text: string, canUndo: boolean) {
-    setToast({ id, text, canUndo })
-  }
-
-  async function doRegister(microzoneId: string, confirm: boolean, origin: 'MAP' | 'SUGGESTION') {
-    setError(null)
-    try {
-      const result = await register.mutateAsync({
-        microzone_id: microzoneId,
-        confirm_not_recovered: confirm,
-        origin,
-      })
-      setWarning(null)
-      showToast(result.injection.id, `Registrada en ${microzoneId}.`, result.can_undo)
-    } catch (err) {
-      if (err instanceof ApiError && err.code === 'MICROZONE_NOT_RECOVERED') {
-        const detail = (err.detail ?? {}) as { suggested_microzone_id?: string }
-        const cell = cellsById.get(microzoneId)
-        if (cell) {
-          setWarning({
-            cell,
-            suggestedId: detail.suggested_microzone_id ?? topSuggestion?.microzone_id ?? null,
-            serverSaid: true,
-          })
-          return
-        }
-      }
-      setError(err instanceof ApiError ? err.message : 'No se pudo registrar. Revisa tu conexión.')
-    }
-  }
-
-  function tapCell(cell: CellOut) {
-    if (register.isPending) return
-    if (cell.color === 'GREEN') {
-      void doRegister(cell.id, false, 'MAP')
-    } else {
-      setWarning({ cell, suggestedId: topSuggestion?.microzone_id ?? null, serverSaid: false })
-    }
+  function locate(id: string) {
+    const macro = parseMacro(id)
+    if (!macro) return
+    setZoom({ macro, side: parseSide(id) ?? 'I', highlight: id })
+    setMapView('body')
   }
 
   async function doUndo() {
@@ -259,7 +218,6 @@ export default function Home() {
   }
 
   const gridSize = mapQuery.data?.grid_size ?? 4
-  const pendingId = register.isPending ? (register.variables?.microzone_id ?? 'pending') : null
 
   return (
     <div className="mx-auto min-h-svh w-full max-w-lg bg-[#f2f2f7] text-[#1c1c1e] dark:bg-black dark:text-[#f2f2f7]">
@@ -298,24 +256,32 @@ export default function Home() {
             )}
             {mapQuery.data && (
               <div className="space-y-3 px-4 pb-32 pt-3">
-                {topSuggestion && (
+                {topSuggestion && !zoom && (
                   <section
                     aria-label="Sugerencia para la próxima dosis"
                     className="rounded-3xl bg-[#0a84ff] p-4 text-white shadow-[0_8px_24px_rgb(10_132_255/0.35)]"
                   >
-                    <p className="text-[13px] font-semibold uppercase tracking-wide text-white/70">Sugerencia</p>
+                    <p className="text-[13px] font-semibold uppercase tracking-wide text-white/70">★ Sugerido ahora</p>
                     <p className="mt-0.5 text-[20px] font-bold leading-snug">
                       {describeLocation(topSuggestion.microzone_id, gridSize)}{' '}
                       <span className="font-mono text-[15px]">({topSuggestion.microzone_id})</span>
                     </p>
-                    <button
-                      type="button"
-                      disabled={register.isPending}
-                      onClick={() => void doRegister(topSuggestion.microzone_id, topSuggestion.color !== 'GREEN', 'SUGGESTION')}
-                      className="pressable touch-target mt-3 w-full rounded-2xl bg-white font-semibold text-[#0a84ff] disabled:opacity-60"
-                    >
-                      {register.isPending ? 'Registrando…' : 'Registrar aquí'}
-                    </button>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => locate(topSuggestion.microzone_id)}
+                        className="pressable touch-target rounded-2xl bg-white font-semibold text-[#0a84ff]"
+                      >
+                        Ver en el mapa
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTab('asistente')}
+                        className="pressable touch-target rounded-2xl bg-white/20 font-semibold text-white"
+                      >
+                        ¿Por qué?
+                      </button>
+                    </div>
                   </section>
                 )}
 
@@ -325,9 +291,52 @@ export default function Home() {
                   </p>
                 )}
 
-                {mapQuery.data.zones.map((z) => (
-                  <MacroCard key={z.macro} zone={z} pendingId={pendingId} onTap={tapCell} />
-                ))}
+                {zoom ? (
+                  <div className="rounded-3xl bg-white py-2 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
+                    <ZoomGrid
+                      key={`${zoom.macro}-${zoom.side}`}
+                      macro={zoom.macro}
+                      map={mapQuery.data}
+                      gridSize={gridSize}
+                      initialSide={zoom.side}
+                      highlightId={zoom.highlight}
+                      onBack={() => setZoom(null)}
+                      onSelect={(cell) => setSheetCell(cell)}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="mx-auto grid w-56 grid-cols-2 gap-1 rounded-2xl bg-black/5 p-1 dark:bg-white/10" role="group" aria-label="Modo de mapa">
+                      {(['body', 'list'] as const).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          aria-pressed={mapView === m}
+                          onClick={() => setMapView(m)}
+                          className={`touch-target rounded-xl text-[14px] font-semibold ${
+                            mapView === m ? 'bg-white shadow dark:bg-[#1c1c1e]' : 'text-black/50 dark:text-white/50'
+                          }`}
+                        >
+                          {m === 'body' ? 'Cuerpo' : 'Lista'}
+                        </button>
+                      ))}
+                    </div>
+
+                    {mapView === 'body' ? (
+                      <div className="rounded-3xl bg-white py-3 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
+                        <BodyMap
+                          map={mapQuery.data}
+                          suggestionId={topSuggestion?.microzone_id ?? null}
+                          onSelectMacro={(macro) => setZoom({ macro, side: 'I', highlight: null })}
+                        />
+                      </div>
+                    ) : (
+                      mapQuery.data.zones.map((z) => (
+                        <MacroCard key={z.macro} zone={z} gridSize={gridSize} onTap={(cell) => setSheetCell(cell)} />
+                      ))
+                    )}
+                  </>
+                )}
 
                 <p className="px-1 pt-1 text-[12px] leading-relaxed text-black/40 dark:text-white/40">
                   Proyecto académico de apoyo a la rotación. No es un dispositivo médico.
@@ -431,76 +440,20 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Sheet de advertencia R04: informa sin bloquear */}
+      {/* Hoja P05: detalle de microzona + registro */}
       <AnimatePresence>
-        {warning && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-30 bg-black/30"
-              onClick={() => setWarning(null)}
-              aria-hidden="true"
-            />
-            <motion.div
-              role="alertdialog"
-              aria-modal="true"
-              aria-labelledby="warn-title"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
-              className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg rounded-t-3xl bg-white px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 dark:bg-[#1c1c1e]"
-            >
-              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-black/15 dark:bg-white/20" aria-hidden="true" />
-              <p className="text-[13px] font-semibold uppercase tracking-wide text-[#ff9f0a]">
-                {warning.cell.color === 'RED' ? 'Zona en recuperación' : 'Zona casi lista'}
-              </p>
-              <h2 id="warn-title" className="mt-0.5 text-[20px]">
-                {warning.cell.id} aún no está recuperada
-              </h2>
-              <p className="mt-1 text-[15px] text-black/60 dark:text-white/60">
-                {warning.serverSaid
-                  ? 'El servidor confirma que sigue en recuperación. '
-                  : 'Usarla ahora puede concentrar tus aplicaciones. '}
-                Estará {formatHours(warning.cell.hours_remaining)}.
-                {warning.suggestedId && (
-                  <>
-                    {' '}Te sugerimos{' '}
-                    <strong>{describeLocation(warning.suggestedId, gridSize)} ({warning.suggestedId})</strong>.
-                  </>
-                )}
-              </p>
-              <div className="mt-4 space-y-2">
-                {warning.suggestedId && (
-                  <button
-                    type="button"
-                    disabled={register.isPending}
-                    onClick={() => void doRegister(warning.suggestedId as string, false, 'SUGGESTION')}
-                    className="pressable touch-target w-full rounded-2xl bg-[#0a84ff] font-semibold text-white disabled:opacity-60"
-                  >
-                    Usar la sugerida ({warning.suggestedId})
-                  </button>
-                )}
-                <button
-                  type="button"
-                  disabled={register.isPending}
-                  onClick={() => void doRegister(warning.cell.id, true, 'MAP')}
-                  className="pressable touch-target w-full rounded-2xl bg-black/5 font-semibold dark:bg-white/10"
-                >
-                  {register.isPending ? 'Registrando…' : 'Registrar aquí de todos modos'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setWarning(null)}
-                  className="pressable touch-target w-full rounded-2xl font-semibold text-[#0a84ff]"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </motion.div>
-          </>
+        {sheetCell && (
+          <MicrozoneSheet
+            cell={sheetCell}
+            gridSize={gridSize}
+            suggestedId={topSuggestion?.microzone_id ?? null}
+            onClose={() => setSheetCell(null)}
+            onRegistered={(id, microzoneId, canUndo) => {
+              setSheetCell(null)
+              setToast({ id, text: `Registrada en ${microzoneId}.`, canUndo })
+            }}
+            onUseSuggested={(id) => locate(id)}
+          />
         )}
       </AnimatePresence>
 
