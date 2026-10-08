@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../lib/auth'
+import { AppShell } from '../components/AppShell'
 import BodyMap from '../components/BodyMap'
 import type { MacroCode } from '../components/BodyMap'
 import { parseMacro, parseSide } from '../components/BodyMap'
@@ -341,19 +342,16 @@ export default function Home() {
 
   const gridSize = mapQuery.data?.grid_size ?? 4
 
-  return (
-    <div className="mx-auto min-h-svh w-full max-w-lg bg-[#f2f2f7] text-[#1c1c1e] dark:bg-black dark:text-[#f2f2f7]">
-      <header className="chrome-translucent sticky top-0 z-10 border-b border-black/5 px-5 pb-2 pt-[max(1rem,env(safe-area-inset-top))] dark:border-white/10">
-        <p className="text-[13px] font-semibold uppercase tracking-wide text-[#0a84ff]">Insumap</p>
-        <h1 className="text-[28px] leading-tight">
-          {tab === 'mapa' && 'Mapa corporal'}
-          {tab === 'historial' && 'Historial'}
-          {tab === 'recordatorios' && 'Mis dosis'}
-          {tab === 'asistente' && 'Asistente'}
-          {tab === 'perfil' && 'Perfil'}
-        </h1>
-      </header>
+  const titles: Record<Tab, string> = {
+    mapa: 'Mapa corporal',
+    historial: 'Historial',
+    recordatorios: 'Mis dosis',
+    asistente: 'Asistente',
+    perfil: 'Perfil',
+  }
 
+  return (
+    <AppShell brand="Insumap" title={titles[tab]} tabs={TABS} active={tab} onChange={(id) => setTab(id as Tab)}>
       <motion.main
         key={tab}
         initial={{ opacity: 0 }}
@@ -377,11 +375,11 @@ export default function Home() {
               </div>
             )}
             {mapQuery.data && (
-              <div className="space-y-3 px-4 pb-32 pt-3">
+              <div className="space-y-3 px-4 pb-32 pt-3 md:grid md:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)] md:items-start md:gap-5 md:space-y-0 lg:px-8 lg:pb-10">
                 {topSuggestion && !zoom && (
                   <section
                     aria-label="Sugerencia para la próxima dosis"
-                    className="rounded-3xl bg-[#0a84ff] p-4 text-white shadow-[0_8px_24px_rgb(10_132_255/0.35)]"
+                    className="rounded-3xl bg-[#0a84ff] p-4 text-white shadow-[0_8px_24px_rgb(10_132_255/0.35)] md:sticky md:top-24 md:col-start-2 md:row-start-1"
                   >
                     <p className="text-[13px] font-semibold uppercase tracking-wide text-white/70">★ Sugerido ahora</p>
                     <p className="mt-0.5 text-[20px] font-bold leading-snug">
@@ -414,7 +412,7 @@ export default function Home() {
                 )}
 
                 {zoom ? (
-                  <div className="rounded-3xl bg-white py-2 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
+                  <div className="rounded-3xl bg-white py-2 shadow-[0_1px_3px_rgb(0_0_0/0.08)] md:col-span-2 dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
                     <ZoomGrid
                       key={`${zoom.macro}-${zoom.side}`}
                       macro={zoom.macro}
@@ -428,7 +426,7 @@ export default function Home() {
                   </div>
                 ) : (
                   <>
-                    <div className="mx-auto grid w-56 grid-cols-2 gap-1 rounded-2xl bg-black/5 p-1 dark:bg-white/10" role="group" aria-label="Modo de mapa">
+                    <div className="mx-auto grid w-56 grid-cols-2 gap-1 rounded-2xl bg-black/5 p-1 md:col-start-1 md:mx-0 dark:bg-white/10" role="group" aria-label="Modo de mapa">
                       {(['body', 'list'] as const).map((m) => (
                         <button
                           key={m}
@@ -460,7 +458,7 @@ export default function Home() {
                   </>
                 )}
 
-                <p className="px-1 pt-1 text-[12px] leading-relaxed text-black/40 dark:text-white/40">
+                <p className="px-1 pt-1 text-[12px] leading-relaxed text-black/40 md:col-span-2 dark:text-white/40">
                   Proyecto académico de apoyo a la rotación. No es un dispositivo médico.
                 </p>
               </div>
@@ -476,7 +474,7 @@ export default function Home() {
         {tab === 'recordatorios' && <Reminders />}
         {tab === 'asistente' && <Assistant />}
         {tab === 'perfil' && (
-          <div className="space-y-3 px-4 pb-32 pt-3">
+          <div className="space-y-3 px-4 pb-32 pt-3 md:grid md:grid-cols-2 md:items-start md:gap-4 md:space-y-0 lg:px-8 lg:pb-10">
             <section className="rounded-3xl bg-white p-4 text-center shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
               <p className="text-[20px] font-bold">{user?.name}</p>
               <p className="mt-0.5 text-[14px] text-black/50 dark:text-white/50">
@@ -550,7 +548,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed inset-x-0 bottom-24 z-20 mx-auto w-full max-w-lg px-4"
+            className="fixed inset-x-0 bottom-24 z-20 mx-auto w-full max-w-lg px-4 lg:bottom-8 lg:left-72 lg:right-auto lg:max-w-md"
           >
             <div className="chrome-translucent flex items-center justify-between gap-3 rounded-3xl border border-black/5 px-4 py-3 shadow-lg dark:border-white/10">
               <p className="text-[14px] font-medium">{toast.text}</p>
@@ -585,38 +583,6 @@ export default function Home() {
           />
         )}
       </AnimatePresence>
-
-      <nav
-        aria-label="Navegación principal"
-        className="chrome-translucent fixed inset-x-0 bottom-0 z-10 border-t border-black/5 dark:border-white/10"
-      >
-        <div className="mx-auto grid w-full max-w-lg grid-cols-5 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1">
-          {TABS.map((t) => {
-            const active = t.id === tab
-            return (
-              <button
-                key={t.id}
-                type="button"
-                aria-current={active ? 'page' : undefined}
-                onClick={() => setTab(t.id)}
-                className={`touch-target pressable flex flex-col items-center justify-center gap-0.5 rounded-2xl text-[11px] font-semibold ${
-                  active ? 'text-[#0a84ff]' : 'text-black/40 dark:text-white/40'
-                }`}
-              >
-                <motion.span
-                  aria-hidden="true"
-                  className="text-[20px] leading-none"
-                  animate={{ scale: active ? 1.15 : 1 }}
-                  transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
-                >
-                  {t.icon}
-                </motion.span>
-                {t.label}
-              </button>
-            )
-          })}
-        </div>
-      </nav>
-    </div>
+    </AppShell>
   )
 }
