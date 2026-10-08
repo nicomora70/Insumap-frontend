@@ -1,6 +1,16 @@
-import { useState } from 'react'
-import { motion } from 'motion/react'
+import { useMemo, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../lib/auth'
+import { ApiError } from '../lib/api'
+import {
+  describeLocation,
+  formatHours,
+  useBodyMap,
+  useRegisterInjection,
+  useSuggestions,
+  useUndoInjection,
+} from '../lib/injections'
+import type { CellOut, MapResponse } from '../lib/injections'
 
 type Tab = 'mapa' | 'historial' | 'recordatorios' | 'asistente' | 'perfil'
 
@@ -12,76 +22,77 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'perfil', label: 'Perfil', icon: '○' },
 ]
 
-type Macro = { code: 'ABD' | 'MUS' | 'BRA' | 'GLU'; label: string; hint: string }
-
-const MACROS: Macro[] = [
-  { code: 'ABD', label: 'Abdomen', hint: 'Izq. / der. del ombligo' },
-  { code: 'MUS', label: 'Muslos', hint: 'Cara frontal y lateral' },
-  { code: 'BRA', label: 'Brazos', hint: 'Cara posterior' },
-  { code: 'GLU', label: 'Glúteos', hint: 'Cuadrante superior externo' },
-]
-
-/** Cosa 1: shell visual. Los colores reales llegan con GET /map en la cosa 2. */
-function mockCells(macro: Macro['code']): ('RED' | 'YELLOW' | 'GREEN')[] {
-  const cells: ('RED' | 'YELLOW' | 'GREEN')[] = Array.from({ length: 16 }, () => 'GREEN')
-  if (macro === 'ABD') {
-    cells[0] = 'RED'
-    cells[5] = 'RED'
-    cells[6] = 'YELLOW'
-  }
-  if (macro === 'MUS') cells[10] = 'YELLOW'
-  if (macro === 'BRA') cells[3] = 'YELLOW'
-  return cells
-}
-
-const CELL_STYLE: Record<string, string> = {
+const CELL_STYLE: Record<CellOut['color'], string> = {
   RED: 'bg-[#ff3b30]/15 text-[#ff3b30] pattern-red',
   YELLOW: 'bg-[#ffcc00]/20 text-[#8a6d00] pattern-yellow dark:text-[#ffd60a]',
   GREEN: 'bg-[#34c759]/15 text-[#248a3d] pattern-green dark:text-[#30d158]',
 }
 
-const CELL_ICON: Record<string, string> = { RED: '●', YELLOW: '◐', GREEN: '○' }
+const CELL_ICON: Record<CellOut['color'], string> = { RED: '●', YELLOW: '◐', GREEN: '○' }
 
-function MacroCard({ macro }: { macro: Macro }) {
-  const cells = mockCells(macro.code)
+const COLOR_LABEL: Record<CellOut['color'], string> = {
+  RED: 'roja, en recuperación',
+  YELLOW: 'amarilla, casi lista',
+  GREEN: 'verde, disponible',
+}
+
+type Warning = {
+  cell: CellOut
+  suggestedId: string | null
+  serverSaid: boolean
+}
+
+function MacroCard({
+  zone,
+  pendingId,
+  onTap,
+}: {
+  zone: MapResponse['zones'][number]
+  pendingId: string | null
+  onTap: (cell: CellOut) => void
+}) {
   return (
     <section
-      aria-label={`${macro.label}: ${macro.hint}`}
+      aria-label={zone.label}
       className="rounded-3xl bg-white p-4 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10"
     >
-      <div className="mb-1 flex items-baseline justify-between">
-        <h2 className="text-[17px]">{macro.label}</h2>
-        <span className="text-[13px] text-black/50 dark:text-white/50">ABD = ejemplo 4×4</span>
-      </div>
-      <p className="mb-3 text-[13px] text-black/50 dark:text-white/50">{macro.hint}</p>
-      <div className="grid grid-cols-2 gap-3">
-        {(['I', 'D'] as const).map((side) => (
-          <div key={side}>
+      <h2 className="text-[17px]">{zone.label}</h2>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        {zone.sides.map((s) => (
+          <div key={s.side}>
             <p className="mb-1 text-[12px] font-semibold text-black/40 dark:text-white/40">
-              {side === 'I' ? 'Izquierdo' : 'Derecho'}
+              {s.side === 'I' ? 'Izquierdo' : 'Derecho'}
             </p>
-            <div className="grid grid-cols-4 gap-1.5" role="group" aria-label={`${macro.label} lado ${side}`}>
-              {cells.map((color, i) => {
-                const row = Math.floor(i / 4) + 1
-                const col = (i % 4) + 1
-                const id = `${macro.code}-${side}-${row}-${col}`
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    aria-label={`Microzona ${id}, ${color === 'RED' ? 'roja, en recuperación' : color === 'YELLOW' ? 'amarilla, casi lista' : 'verde, disponible'}`}
-                    data-microzone={id}
-                    className={`touch-target pressable flex items-center justify-center rounded-xl text-[13px] font-bold ${CELL_STYLE[color]}`}
-                  >
-                    <span aria-hidden="true">{CELL_ICON[color]}</span>
-                  </button>
-                )
-              })}
+            <div className="grid grid-cols-4 gap-1.5" role="group" aria-label={`${zone.label} lado ${s.side}`}>
+              {s.cells.map((cell) => (
+                <button
+                  key={cell.id}
+                  type="button"
+                  disabled={pendingId !== null}
+                  aria-label={`Microzona ${cell.id}, ${COLOR_LABEL[cell.color]}`}
+                  data-microzone={cell.id}
+                  onClick={() => onTap(cell)}
+                  className={`touch-target pressable flex items-center justify-center rounded-xl text-[13px] font-bold disabled:opacity-60 ${CELL_STYLE[cell.color]} ${pendingId === cell.id ? 'animate-pulse' : ''}`}
+                >
+                  <span aria-hidden="true">{CELL_ICON[cell.color]}</span>
+                </button>
+              ))}
             </div>
           </div>
         ))}
       </div>
     </section>
+  )
+}
+
+function MapSkeleton() {
+  return (
+    <div className="space-y-3 px-4 pb-32 pt-3" aria-label="Cargando mapa">
+      <div className="h-44 animate-pulse rounded-3xl bg-black/5 dark:bg-white/10" />
+      {[0, 1].map((i) => (
+        <div key={i} className="h-64 animate-pulse rounded-3xl bg-black/5 dark:bg-white/10" />
+      ))}
+    </div>
   )
 }
 
@@ -97,10 +108,77 @@ function Placeholder({ title, body }: { title: string; body: string }) {
 export default function Home() {
   const [tab, setTab] = useState<Tab>('mapa')
   const { user, logout } = useAuth()
+  const mapQuery = useBodyMap()
+  const suggestionsQuery = useSuggestions(3)
+  const register = useRegisterInjection()
+  const undo = useUndoInjection()
+
+  const [warning, setWarning] = useState<Warning | null>(null)
+  const [toast, setToast] = useState<{ id: string; text: string; canUndo: boolean } | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const topSuggestion = suggestionsQuery.data?.suggestions[0] ?? null
+  const cellsById = useMemo(() => {
+    const index = new globalThis.Map<string, CellOut>()
+    for (const z of mapQuery.data?.zones ?? []) for (const s of z.sides) for (const c of s.cells) index.set(c.id, c)
+    return index
+  }, [mapQuery.data])
+
+  function showToast(id: string, text: string, canUndo: boolean) {
+    setToast({ id, text, canUndo })
+  }
+
+  async function doRegister(microzoneId: string, confirm: boolean, origin: 'MAP' | 'SUGGESTION') {
+    setError(null)
+    try {
+      const result = await register.mutateAsync({
+        microzone_id: microzoneId,
+        confirm_not_recovered: confirm,
+        origin,
+      })
+      setWarning(null)
+      showToast(result.injection.id, `Registrada en ${microzoneId}.`, result.can_undo)
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'MICROZONE_NOT_RECOVERED') {
+        const detail = (err.detail ?? {}) as { suggested_microzone_id?: string }
+        const cell = cellsById.get(microzoneId)
+        if (cell) {
+          setWarning({
+            cell,
+            suggestedId: detail.suggested_microzone_id ?? topSuggestion?.microzone_id ?? null,
+            serverSaid: true,
+          })
+          return
+        }
+      }
+      setError(err instanceof ApiError ? err.message : 'No se pudo registrar. Revisa tu conexión.')
+    }
+  }
+
+  function tapCell(cell: CellOut) {
+    if (register.isPending) return
+    if (cell.color === 'GREEN') {
+      void doRegister(cell.id, false, 'MAP')
+    } else {
+      setWarning({ cell, suggestedId: topSuggestion?.microzone_id ?? null, serverSaid: false })
+    }
+  }
+
+  async function doUndo() {
+    setError(null)
+    try {
+      await undo.mutateAsync()
+      setToast(null)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo deshacer.')
+    }
+  }
+
+  const gridSize = mapQuery.data?.grid_size ?? 4
+  const pendingId = register.isPending ? (register.variables?.microzone_id ?? 'pending') : null
 
   return (
     <div className="mx-auto min-h-svh w-full max-w-lg bg-[#f2f2f7] text-[#1c1c1e] dark:bg-black dark:text-[#f2f2f7]">
-      {/* Translucent header: answers "where am I" while content scrolls under */}
       <header className="chrome-translucent sticky top-0 z-10 border-b border-black/5 px-5 pb-2 pt-[max(1rem,env(safe-area-inset-top))] dark:border-white/10">
         <p className="text-[13px] font-semibold uppercase tracking-wide text-[#0a84ff]">Insumap</p>
         <h1 className="text-[28px] leading-tight">
@@ -119,37 +197,60 @@ export default function Home() {
         transition={{ duration: 0.18, ease: 'easeOut' }}
       >
         {tab === 'mapa' && (
-          <div className="space-y-3 px-4 pb-32 pt-3">
-            {/* Suggestion card: the common path first (apple-design simplicity) */}
-            <section
-              aria-label="Sugerencia para la próxima dosis"
-              className="rounded-3xl bg-[#0a84ff] p-4 text-white shadow-[0_8px_24px_rgb(10_132_255/0.35)]"
-            >
-              <p className="text-[13px] font-semibold uppercase tracking-wide text-white/70">
-                Sugerencia · vista previa
-              </p>
-              <p className="mt-0.5 text-[20px] font-bold leading-snug">
-                Glúteo derecho, parte superior <span className="font-mono text-[15px]">(GLU-D-1-1)</span>
-              </p>
-              <p className="mt-1 text-[14px] text-white/80">
-                El punto óptimo real lo calcula el backend (cosa 2). Toca una microzona verde para registrar.
-              </p>
-              <button
-                type="button"
-                className="pressable touch-target mt-3 w-full rounded-2xl bg-white font-semibold text-[#0a84ff]"
-              >
-                Registrar aquí
-              </button>
-            </section>
+          <>
+            {mapQuery.isPending && <MapSkeleton />}
+            {mapQuery.isError && (
+              <div className="mx-auto flex max-w-md flex-col items-center px-6 pb-32 pt-16 text-center">
+                <p className="text-[15px] font-semibold">No pudimos cargar tu mapa</p>
+                <p className="mt-1 text-[14px] text-black/50 dark:text-white/50">Revisa tu conexión e inténtalo de nuevo.</p>
+                <button
+                  type="button"
+                  onClick={() => mapQuery.refetch()}
+                  className="pressable touch-target mt-4 w-full rounded-2xl bg-[#0a84ff] font-semibold text-white"
+                >
+                  Reintentar
+                </button>
+              </div>
+            )}
+            {mapQuery.data && (
+              <div className="space-y-3 px-4 pb-32 pt-3">
+                {topSuggestion && (
+                  <section
+                    aria-label="Sugerencia para la próxima dosis"
+                    className="rounded-3xl bg-[#0a84ff] p-4 text-white shadow-[0_8px_24px_rgb(10_132_255/0.35)]"
+                  >
+                    <p className="text-[13px] font-semibold uppercase tracking-wide text-white/70">Sugerencia</p>
+                    <p className="mt-0.5 text-[20px] font-bold leading-snug">
+                      {describeLocation(topSuggestion.microzone_id, gridSize)}{' '}
+                      <span className="font-mono text-[15px]">({topSuggestion.microzone_id})</span>
+                    </p>
+                    <button
+                      type="button"
+                      disabled={register.isPending}
+                      onClick={() => void doRegister(topSuggestion.microzone_id, topSuggestion.color !== 'GREEN', 'SUGGESTION')}
+                      className="pressable touch-target mt-3 w-full rounded-2xl bg-white font-semibold text-[#0a84ff] disabled:opacity-60"
+                    >
+                      {register.isPending ? 'Registrando…' : 'Registrar aquí'}
+                    </button>
+                  </section>
+                )}
 
-            {MACROS.map((m) => (
-              <MacroCard key={m.code} macro={m} />
-            ))}
+                {error && (
+                  <p role="alert" className="rounded-2xl bg-[#ff3b30]/10 px-4 py-3 text-[14px] font-medium text-[#ff3b30]">
+                    {error}
+                  </p>
+                )}
 
-            <p className="px-1 pt-1 text-[12px] leading-relaxed text-black/40 dark:text-white/40">
-              Proyecto académico de apoyo a la rotación. No es un dispositivo médico.
-            </p>
-          </div>
+                {mapQuery.data.zones.map((z) => (
+                  <MacroCard key={z.macro} zone={z} pendingId={pendingId} onTap={tapCell} />
+                ))}
+
+                <p className="px-1 pt-1 text-[12px] leading-relaxed text-black/40 dark:text-white/40">
+                  Proyecto académico de apoyo a la rotación. No es un dispositivo médico.
+                </p>
+              </div>
+            )}
+          </>
         )}
         {tab === 'historial' && (
           <Placeholder title="Historial" body="Cosa 4: lista desde GET /history con paginación por cursor." />
@@ -167,7 +268,7 @@ export default function Home() {
               {user?.email} · {user?.role === 'DOCTOR' ? 'Médico' : 'Paciente'}
             </p>
             <p className="mt-3 text-[14px] text-black/50 dark:text-white/50">
-              Cosa 3: cuadrícula 2×4×6 y vínculo con el médico.
+              Cuadrícula {gridSize}×{gridSize} · Cosa 4: cambiar tamaño y vínculo con el médico.
             </p>
             <button
               type="button"
@@ -180,7 +281,106 @@ export default function Home() {
         )}
       </motion.main>
 
-      {/* BottomNav: 5 destinos, targets >=44px, safe-area aware */}
+      {/* Toast con deshacer */}
+      <AnimatePresence>
+        {toast && tab === 'mapa' && (
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ type: 'spring', damping: 1.0, stiffness: 260 }}
+            className="fixed inset-x-0 bottom-24 z-20 mx-auto w-full max-w-lg px-4"
+          >
+            <div className="chrome-translucent flex items-center justify-between gap-3 rounded-3xl border border-black/5 px-4 py-3 shadow-lg dark:border-white/10">
+              <p className="text-[14px] font-medium">{toast.text}</p>
+              {toast.canUndo && (
+                <button
+                  type="button"
+                  disabled={undo.isPending}
+                  onClick={() => void doUndo()}
+                  className="pressable shrink-0 rounded-2xl bg-[#0a84ff] px-4 py-2 text-[14px] font-semibold text-white disabled:opacity-60"
+                >
+                  {undo.isPending ? '…' : 'Deshacer'}
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sheet de advertencia R04: informa sin bloquear */}
+      <AnimatePresence>
+        {warning && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-30 bg-black/30"
+              onClick={() => setWarning(null)}
+              aria-hidden="true"
+            />
+            <motion.div
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="warn-title"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 1.0, stiffness: 300 }}
+              className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg rounded-t-3xl bg-white px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 dark:bg-[#1c1c1e]"
+            >
+              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-black/15 dark:bg-white/20" aria-hidden="true" />
+              <p className="text-[13px] font-semibold uppercase tracking-wide text-[#ff9f0a]">
+                {warning.cell.color === 'RED' ? 'Zona en recuperación' : 'Zona casi lista'}
+              </p>
+              <h2 id="warn-title" className="mt-0.5 text-[20px]">
+                {warning.cell.id} aún no está recuperada
+              </h2>
+              <p className="mt-1 text-[15px] text-black/60 dark:text-white/60">
+                {warning.serverSaid
+                  ? 'El servidor confirma que sigue en recuperación. '
+                  : 'Usarla ahora puede concentrar tus aplicaciones. '}
+                Estará {formatHours(warning.cell.hours_remaining)}.
+                {warning.suggestedId && (
+                  <>
+                    {' '}Te sugerimos{' '}
+                    <strong>{describeLocation(warning.suggestedId, gridSize)} ({warning.suggestedId})</strong>.
+                  </>
+                )}
+              </p>
+              <div className="mt-4 space-y-2">
+                {warning.suggestedId && (
+                  <button
+                    type="button"
+                    disabled={register.isPending}
+                    onClick={() => void doRegister(warning.suggestedId as string, false, 'SUGGESTION')}
+                    className="pressable touch-target w-full rounded-2xl bg-[#0a84ff] font-semibold text-white disabled:opacity-60"
+                  >
+                    Usar la sugerida ({warning.suggestedId})
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={register.isPending}
+                  onClick={() => void doRegister(warning.cell.id, true, 'MAP')}
+                  className="pressable touch-target w-full rounded-2xl bg-black/5 font-semibold dark:bg-white/10"
+                >
+                  {register.isPending ? 'Registrando…' : 'Registrar aquí de todos modos'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWarning(null)}
+                  className="pressable touch-target w-full rounded-2xl font-semibold text-[#0a84ff]"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       <nav
         aria-label="Navegación principal"
         className="chrome-translucent fixed inset-x-0 bottom-0 z-10 border-t border-black/5 dark:border-white/10"
