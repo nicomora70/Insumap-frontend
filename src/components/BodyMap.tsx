@@ -51,18 +51,18 @@ function ZoneShape({ macro, color, dimmed, onTap, label }: {
   const fill = STATUS_FILL[color]
   const pattern = color === 'RED' ? 'url(#bodymap-stripes)' : color === 'YELLOW' ? 'url(#bodymap-dots)' : undefined
   const rects: Record<MacroCode, { x: number; y: number; w: number; h: number; rx: number }[]> = {
-    ABD: [{ x: 84, y: 104, w: 32, h: 54, rx: 8 }],
+    ABD: [{ x: 80, y: 106, w: 40, h: 54, rx: 9 }],
     MUS: [
-      { x: 70, y: 200, w: 22, h: 75, rx: 9 },
-      { x: 108, y: 200, w: 22, h: 75, rx: 9 },
+      { x: 69, y: 198, w: 24, h: 86, rx: 10 },
+      { x: 107, y: 198, w: 24, h: 86, rx: 10 },
     ],
     GLU: [
-      { x: 74, y: 196, w: 20, h: 34, rx: 9 },
-      { x: 106, y: 196, w: 20, h: 34, rx: 9 },
+      { x: 73, y: 194, w: 22, h: 40, rx: 10 },
+      { x: 105, y: 194, w: 22, h: 40, rx: 10 },
     ],
     BRA: [
-      { x: 52, y: 70, w: 13, h: 75, rx: 6.5 },
-      { x: 135, y: 70, w: 13, h: 75, rx: 6.5 },
+      { x: 52, y: 68, w: 13, h: 78, rx: 6.5 },
+      { x: 135, y: 68, w: 13, h: 78, rx: 6.5 },
     ],
   }
   const common = {
@@ -92,7 +92,7 @@ function ZoneShape({ macro, color, dimmed, onTap, label }: {
 /** Centroide aproximado de cada macro para la estrella ★ de sugerencia. */
 const STAR_AT: Record<MacroCode, { x: number; y: number }> = {
   ABD: { x: 100, y: 131 },
-  MUS: { x: 81, y: 237 },
+  MUS: { x: 81, y: 241 },
   GLU: { x: 116, y: 213 },
   BRA: { x: 141, y: 107 },
 }
@@ -140,7 +140,7 @@ export default function BodyMap({ map, suggestionId, onSelectMacro }: {
         viewBox="0 0 200 400"
         role="img"
         aria-label={view === 'front' ? 'Cuerpo de frente: abdomen y muslos' : 'Cuerpo de espalda: glúteos y brazos'}
-        className="mx-auto mt-1 h-[380px] w-auto"
+        className="mx-auto mt-1 h-[430px] w-auto"
       >
         <defs>
           <pattern id="bodymap-stripes" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
