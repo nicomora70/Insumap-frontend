@@ -422,7 +422,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
-            transition={{ type: 'spring', damping: 1.0, stiffness: 260 }}
+            transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
             className="fixed inset-x-0 bottom-24 z-20 mx-auto w-full max-w-lg px-4"
           >
             <div className="chrome-translucent flex items-center justify-between gap-3 rounded-3xl border border-black/5 px-4 py-3 shadow-lg dark:border-white/10">
@@ -461,7 +461,7 @@ export default function Home() {
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 1.0, stiffness: 300 }}
+              transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
               className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg rounded-t-3xl bg-white px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 dark:bg-[#1c1c1e]"
             >
               <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-black/15 dark:bg-white/20" aria-hidden="true" />
@@ -536,7 +536,7 @@ export default function Home() {
                   aria-hidden="true"
                   className="text-[20px] leading-none"
                   animate={{ scale: active ? 1.15 : 1 }}
-                  transition={{ type: 'spring', damping: 1.0, stiffness: 260 }}
+                  transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
                 >
                   {t.icon}
                 </motion.span>
