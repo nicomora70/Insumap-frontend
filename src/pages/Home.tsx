@@ -15,6 +15,8 @@ import {
   useUndoInjection,
 } from '../lib/injections'
 import type { CellOut, MapResponse } from '../lib/injections'
+import Reminders from './Reminders'
+import Assistant from './Assistant'
 
 type Tab = 'mapa' | 'historial' | 'recordatorios' | 'asistente' | 'perfil'
 
@@ -185,15 +187,6 @@ function HistoryList() {
   )
 }
 
-function Placeholder({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="mx-auto flex max-w-md flex-col items-center px-6 pb-32 pt-16 text-center">
-      <p className="text-[15px] font-semibold">{title}</p>
-      <p className="mt-1 text-[14px] text-black/50 dark:text-white/50">{body}</p>
-    </div>
-  )
-}
-
 export default function Home() {
   const [tab, setTab] = useState<Tab>('mapa')
   const { user, logout } = useAuth()
@@ -344,12 +337,8 @@ export default function Home() {
           </>
         )}
         {tab === 'historial' && <HistoryList />}
-        {tab === 'recordatorios' && (
-          <Placeholder title="Mis dosis" body="Cosa 5: cronograma y próximos recordatorios." />
-        )}
-        {tab === 'asistente' && (
-          <Placeholder title="Asistente" body="Cosa 6: explica la sugerencia en lenguaje sencillo, sin dosis." />
-        )}
+        {tab === 'recordatorios' && <Reminders />}
+        {tab === 'asistente' && <Assistant />}
         {tab === 'perfil' && (
           <div className="space-y-3 px-4 pb-32 pt-3">
             <section className="rounded-3xl bg-white p-4 text-center shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
