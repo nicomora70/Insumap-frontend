@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../lib/auth'
+import { useHistory, statusBadge, formatAppliedAt } from '../lib/history'
+import type { InjectionOut } from '../lib/history'
+import { useSetGridSize } from '../lib/settings'
+import type { GridSize } from '../lib/settings'
 import { ApiError } from '../lib/api'
 import {
   describeLocation,
@@ -96,6 +100,91 @@ function MapSkeleton() {
   )
 }
 
+function HistoryRow({ item }: { item: InjectionOut }) {
+  const { date, time } = formatAppliedAt(item.applied_at)
+  const badge = statusBadge(item.status)
+  const [hm, meridiem] = time.split(' ')
+  const hour = hm?.split(':')[0] ?? ''
+  return (
+    <li className="flex items-center gap-3 rounded-3xl bg-white px-4 py-3 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
+      <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-2xl bg-[#0a84ff]/10 leading-none">
+        <span className="text-[15px] font-bold text-[#0a84ff]">{hour}</span>
+        <span className="text-[10px] font-semibold text-[#0a84ff]/70">{meridiem ?? ''}</span>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-mono text-[15px] font-semibold">{item.microzone_id}</p>
+        <p className="text-[13px] text-black/50 dark:text-white/50">
+          {date} · {time} · {item.macro}
+        </p>
+      </div>
+      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[12px] font-semibold ${badge.className}`}>
+        {badge.text}
+      </span>
+    </li>
+  )
+}
+
+function HistoryList() {
+  const history = useHistory()
+  const items = history.data?.pages.flatMap((p) => p.items) ?? []
+
+  if (history.isPending) {
+    return (
+      <div className="space-y-2 px-4 pb-32 pt-3" aria-label="Cargando historial">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-16 animate-pulse rounded-3xl bg-black/5 dark:bg-white/10" />
+        ))}
+      </div>
+    )
+  }
+
+  if (history.isError) {
+    return (
+      <div className="mx-auto flex max-w-md flex-col items-center px-6 pb-32 pt-16 text-center">
+        <p className="text-[15px] font-semibold">No pudimos cargar tu historial</p>
+        <button
+          type="button"
+          onClick={() => history.refetch()}
+          className="pressable touch-target mt-4 w-full rounded-2xl bg-[#0a84ff] font-semibold text-white"
+        >
+          Reintentar
+        </button>
+      </div>
+    )
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="mx-auto flex max-w-md flex-col items-center px-6 pb-32 pt-16 text-center">
+        <p className="text-[15px] font-semibold">Aún no hay aplicaciones registradas</p>
+        <p className="mt-1 text-[14px] text-black/50 dark:text-white/50">
+          Registra tu primera dosis desde el mapa y aparecerá aquí.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="px-4 pb-32 pt-3">
+      <ul className="space-y-2">
+        {items.map((item) => (
+          <HistoryRow key={item.id} item={item} />
+        ))}
+      </ul>
+      {history.hasNextPage && (
+        <button
+          type="button"
+          disabled={history.isFetchingNextPage}
+          onClick={() => void history.fetchNextPage()}
+          className="pressable touch-target mt-3 w-full rounded-2xl bg-black/5 font-semibold dark:bg-white/10"
+        >
+          {history.isFetchingNextPage ? 'Cargando…' : 'Ver más'}
+        </button>
+      )}
+    </div>
+  )
+}
+
 function Placeholder({ title, body }: { title: string; body: string }) {
   return (
     <div className="mx-auto flex max-w-md flex-col items-center px-6 pb-32 pt-16 text-center">
@@ -112,6 +201,8 @@ export default function Home() {
   const suggestionsQuery = useSuggestions(3)
   const register = useRegisterInjection()
   const undo = useUndoInjection()
+  const setGrid = useSetGridSize()
+  const [settingsError, setSettingsError] = useState<string | null>(null)
 
   const [warning, setWarning] = useState<Warning | null>(null)
   const [toast, setToast] = useState<{ id: string; text: string; canUndo: boolean } | null>(null)
@@ -252,9 +343,7 @@ export default function Home() {
             )}
           </>
         )}
-        {tab === 'historial' && (
-          <Placeholder title="Historial" body="Cosa 4: lista desde GET /history con paginación por cursor." />
-        )}
+        {tab === 'historial' && <HistoryList />}
         {tab === 'recordatorios' && (
           <Placeholder title="Mis dosis" body="Cosa 5: cronograma y próximos recordatorios." />
         )}
@@ -262,18 +351,63 @@ export default function Home() {
           <Placeholder title="Asistente" body="Cosa 6: explica la sugerencia en lenguaje sencillo, sin dosis." />
         )}
         {tab === 'perfil' && (
-          <div className="mx-auto flex max-w-md flex-col items-center px-6 pb-32 pt-16 text-center">
-            <p className="text-[20px] font-bold">{user?.name}</p>
-            <p className="mt-0.5 text-[14px] text-black/50 dark:text-white/50">
-              {user?.email} · {user?.role === 'DOCTOR' ? 'Médico' : 'Paciente'}
-            </p>
-            <p className="mt-3 text-[14px] text-black/50 dark:text-white/50">
-              Cuadrícula {gridSize}×{gridSize} · Cosa 4: cambiar tamaño y vínculo con el médico.
-            </p>
+          <div className="space-y-3 px-4 pb-32 pt-3">
+            <section className="rounded-3xl bg-white p-4 text-center shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
+              <p className="text-[20px] font-bold">{user?.name}</p>
+              <p className="mt-0.5 text-[14px] text-black/50 dark:text-white/50">
+                {user?.email} · {user?.role === 'DOCTOR' ? 'Médico' : 'Paciente'}
+              </p>
+            </section>
+
+            <section
+              aria-label="Tamaño de la cuadrícula"
+              className="rounded-3xl bg-white p-4 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10"
+            >
+              <h2 className="text-[17px]">Cuadrícula por lado</h2>
+              <p className="mt-0.5 text-[13px] text-black/50 dark:text-white/50">
+                Cambiarla reproyecta tu historial a la nueva cuadrícula.
+              </p>
+              <div className="mt-3 grid grid-cols-3 gap-2" role="group" aria-label="Tamaño de cuadrícula">
+                {([2, 4, 6] as GridSize[]).map((n) => {
+                  const active = gridSize === n
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      disabled={setGrid.isPending}
+                      aria-pressed={active}
+                      onClick={() => {
+                        if (n === gridSize) return
+                        setSettingsError(null)
+                        setGrid.mutate(n, {
+                          onError: (err) =>
+                            setSettingsError(
+                              err instanceof ApiError ? err.message : 'No se pudo cambiar la cuadrícula.',
+                            ),
+                        })
+                      }}
+                      className={`touch-target pressable rounded-2xl border text-[16px] font-bold disabled:opacity-60 ${
+                        active
+                          ? 'border-[#0a84ff] bg-[#0a84ff]/10 text-[#0a84ff]'
+                          : 'border-black/10 text-black/60 dark:border-white/10 dark:text-white/60'
+                      }`}
+                    >
+                      {n}×{n}
+                    </button>
+                  )
+                })}
+              </div>
+              {settingsError && (
+                <p role="alert" className="mt-2 text-[13px] text-[#ff3b30]">
+                  {settingsError}
+                </p>
+              )}
+            </section>
+
             <button
               type="button"
               onClick={() => void logout()}
-              className="pressable touch-target mt-5 w-full rounded-2xl bg-[#ff3b30]/10 font-semibold text-[#ff3b30]"
+              className="pressable touch-target w-full rounded-2xl bg-[#ff3b30]/10 font-semibold text-[#ff3b30]"
             >
               Cerrar sesión
             </button>
