@@ -50,12 +50,27 @@ function ZoneShape({ macro, color, dimmed, onTap, label }: {
 }) {
   const fill = STATUS_FILL[color]
   const pattern = color === 'RED' ? 'url(#bodymap-stripes)' : color === 'YELLOW' ? 'url(#bodymap-dots)' : undefined
+  const rects: Record<MacroCode, { x: number; y: number; w: number; h: number; rx: number }[]> = {
+    ABD: [{ x: 84, y: 104, w: 32, h: 54, rx: 8 }],
+    MUS: [
+      { x: 70, y: 200, w: 22, h: 75, rx: 9 },
+      { x: 108, y: 200, w: 22, h: 75, rx: 9 },
+    ],
+    GLU: [
+      { x: 74, y: 196, w: 20, h: 34, rx: 9 },
+      { x: 106, y: 196, w: 20, h: 34, rx: 9 },
+    ],
+    BRA: [
+      { x: 52, y: 70, w: 13, h: 75, rx: 6.5 },
+      { x: 135, y: 70, w: 13, h: 75, rx: 6.5 },
+    ],
+  }
   const common = {
     fill,
-    fillOpacity: dimmed ? 0.08 : 0.32,
+    fillOpacity: dimmed ? 0.06 : 0.28,
     stroke: fill,
-    strokeOpacity: dimmed ? 0.25 : 0.9,
-    strokeWidth: 1.5,
+    strokeOpacity: dimmed ? 0.2 : 0.85,
+    strokeWidth: 1.25,
     style: onTap ? { cursor: 'pointer' } : undefined,
     onClick: onTap,
   }
@@ -63,58 +78,23 @@ function ZoneShape({ macro, color, dimmed, onTap, label }: {
     <g role={onTap ? 'button' : undefined} aria-label={onTap ? label : undefined} tabIndex={onTap ? 0 : undefined}
       onKeyDown={onTap ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap() } } : undefined}
     >
-      {macro === 'ABD' && <rect x={76} y={108} width={48} height={56} rx={10} {...common} />}
-      {macro === 'MUS' && (
-        <>
-          <rect x={74} y={196} width={24} height={82} rx={10} {...common} />
-          <rect x={102} y={196} width={24} height={82} rx={10} {...common} />
-        </>
-      )}
-      {macro === 'GLU' && (
-        <>
-          <rect x={76} y={200} width={22} height={36} rx={10} {...common} />
-          <rect x={102} y={200} width={22} height={36} rx={10} {...common} />
-        </>
-      )}
-      {macro === 'BRA' && (
-        <>
-          <rect x={48} y={58} width={16} height={92} rx={8} {...common} />
-          <rect x={136} y={58} width={16} height={92} rx={8} {...common} />
-        </>
-      )}
-      {pattern && !dimmed && (
-        <>
-          {macro === 'ABD' && <rect x={76} y={108} width={48} height={56} rx={10} fill={pattern} pointerEvents="none" />}
-          {macro === 'MUS' && (
-            <>
-              <rect x={74} y={196} width={24} height={82} rx={10} fill={pattern} pointerEvents="none" />
-              <rect x={102} y={196} width={24} height={82} rx={10} fill={pattern} pointerEvents="none" />
-            </>
-          )}
-          {macro === 'GLU' && (
-            <>
-              <rect x={76} y={200} width={22} height={36} rx={10} fill={pattern} pointerEvents="none" />
-              <rect x={102} y={200} width={22} height={36} rx={10} fill={pattern} pointerEvents="none" />
-            </>
-          )}
-          {macro === 'BRA' && (
-            <>
-              <rect x={48} y={58} width={16} height={92} rx={8} fill={pattern} pointerEvents="none" />
-              <rect x={136} y={58} width={16} height={92} rx={8} fill={pattern} pointerEvents="none" />
-            </>
-          )}
-        </>
-      )}
+      {rects[macro].map((r, i) => (
+        <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} rx={r.rx} {...common} />
+      ))}
+      {pattern && !dimmed &&
+        rects[macro].map((r, i) => (
+          <rect key={`p${i}`} x={r.x} y={r.y} width={r.w} height={r.h} rx={r.rx} fill={pattern} pointerEvents="none" />
+        ))}
     </g>
   )
 }
 
 /** Centroide aproximado de cada macro para la estrella ★ de sugerencia. */
 const STAR_AT: Record<MacroCode, { x: number; y: number }> = {
-  ABD: { x: 100, y: 136 },
-  MUS: { x: 86, y: 237 },
-  GLU: { x: 113, y: 218 },
-  BRA: { x: 144, y: 105 },
+  ABD: { x: 100, y: 131 },
+  MUS: { x: 81, y: 237 },
+  GLU: { x: 116, y: 213 },
+  BRA: { x: 141, y: 107 },
 }
 
 export default function BodyMap({ map, suggestionId, onSelectMacro }: {
@@ -172,18 +152,20 @@ export default function BodyMap({ map, suggestionId, onSelectMacro }: {
           </pattern>
         </defs>
 
-        {/* Silueta neutra */}
-        <g className="fill-[#d1d1d6] dark:fill-[#2c2c2e]">
-          <circle cx={100} cy={26} r={16} />
-          <rect x={92} y={40} width={16} height={12} rx={5} />
-          <rect x={68} y={50} width={64} height={118} rx={22} />
-          <rect x={48} y={58} width={16} height={92} rx={8} />
-          <rect x={136} y={58} width={16} height={92} rx={8} />
-          <rect x={72} y={166} width={56} height={32} rx={12} />
-          <rect x={74} y={196} width={24} height={122} rx={12} />
-          <rect x={102} y={196} width={24} height={122} rx={12} />
-          <ellipse cx={86} cy={330} rx={13} ry={8} />
-          <ellipse cx={114} cy={330} rx={13} ry={8} />
+        {/* Silueta line-art (trazo fino, sin relleno) */}
+        <g fill="none" className="stroke-[#8e8e93]" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx={100} cy={24} r={15} />
+          <path
+            d="M91,40 L78,46 C68,49 61,55 59,66 L52,130 C51,150 52,166 55,176
+               C56,183 63,183 64,176 L67,132 C69,116 71,106 73,100 L75,150
+               C76,165 75,176 73,186 C71,196 69,212 69,226 L67,306
+               C67,315 70,319 76,319 L84,319 C90,319 92,315 92,308 L94,232
+               C95,224 97,218 100,218 C103,218 105,224 106,232 L108,308
+               C108,315 110,319 116,319 L124,319 C130,319 133,315 133,306
+               L131,226 C131,212 129,196 127,186 C125,176 124,165 125,150 L127,100
+               C129,106 131,116 133,132 L136,176 C137,183 144,183 145,176
+               C148,166 149,150 148,130 L141,66 C139,55 132,49 122,46 L109,40 Z"
+          />
         </g>
 
         {/* Zonas visibles tocables + resto atenuado como contexto */}
@@ -225,8 +207,20 @@ export default function BodyMap({ map, suggestionId, onSelectMacro }: {
       )}
 
       <p className="mt-2 text-center text-[12px] text-black/40 dark:text-white/40">
-        Toca una zona para ver su cuadrícula · ✕ rojo ! amarillo ✓ verde
+        Toca una zona del cuerpo o un nombre para ver su cuadrícula · ✕ rojo ! amarillo ✓ verde
       </p>
+      <div className="mt-2 flex flex-wrap justify-center gap-2">
+        {VIEW_MACROS[view].map((macro) => (
+          <button
+            key={macro}
+            type="button"
+            onClick={() => onSelectMacro(macro)}
+            className="pressable rounded-full bg-black/5 px-4 py-2 text-[13px] font-semibold dark:bg-white/10"
+          >
+            {MACRO_LABEL[macro]}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
