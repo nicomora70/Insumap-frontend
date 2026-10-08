@@ -10,6 +10,7 @@ import type { InjectionOut } from '../lib/history'
 import { useSetGridSize } from '../lib/settings'
 import type { GridSize } from '../lib/settings'
 import { ApiError } from '../lib/api'
+import { downloadExport, useCreateCode, useLinks, useRevokeLink } from '../lib/doctor'
 import {
   describeLocation,
   useBodyMap,
@@ -122,11 +123,20 @@ function HistoryRow({ item }: { item: InjectionOut }) {
   )
 }
 
-function HistoryList() {
-  const history = useHistory()
-  const items = history.data?.pages.flatMap((p) => p.items) ?? []
+export type HistoryViewData = {
+  data: { pages: { items: InjectionOut[] }[] } | undefined
+  isPending: boolean
+  isError: boolean
+  refetch: () => void
+  hasNextPage: boolean | undefined
+  isFetchingNextPage: boolean
+  fetchNextPage: () => void
+}
 
-  if (history.isPending) {
+export function HistoryView({ query }: { query: HistoryViewData }) {
+  const items = query.data?.pages.flatMap((p) => p.items) ?? []
+
+  if (query.isPending) {
     return (
       <div className="space-y-2 px-4 pb-32 pt-3" aria-label="Cargando historial">
         {[0, 1, 2].map((i) => (
@@ -136,13 +146,13 @@ function HistoryList() {
     )
   }
 
-  if (history.isError) {
+  if (query.isError) {
     return (
       <div className="mx-auto flex max-w-md flex-col items-center px-6 pb-32 pt-16 text-center">
         <p className="text-[15px] font-semibold">No pudimos cargar tu historial</p>
         <button
           type="button"
-          onClick={() => history.refetch()}
+          onClick={() => query.refetch()}
           className="pressable touch-target mt-4 w-full rounded-2xl bg-[#0a84ff] font-semibold text-white"
         >
           Reintentar
@@ -169,17 +179,129 @@ function HistoryList() {
           <HistoryRow key={item.id} item={item} />
         ))}
       </ul>
-      {history.hasNextPage && (
+      {query.hasNextPage && (
         <button
           type="button"
-          disabled={history.isFetchingNextPage}
-          onClick={() => void history.fetchNextPage()}
+          disabled={query.isFetchingNextPage}
+          onClick={() => void query.fetchNextPage()}
           className="pressable touch-target mt-3 w-full rounded-2xl bg-black/5 font-semibold dark:bg-white/10"
         >
-          {history.isFetchingNextPage ? 'Cargando…' : 'Ver más'}
+          {query.isFetchingNextPage ? 'Cargando…' : 'Ver más'}
         </button>
       )}
     </div>
+  )
+}
+
+function SelfHistory() {
+  const history = useHistory()
+  return <HistoryView query={history} />
+}
+
+export function ExportButton({ basePath, filename }: { basePath: string; filename: string }) {
+  const [format, setFormat] = useState<'pdf' | 'xlsx' | 'csv'>('pdf')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  return (
+    <div className="px-4 pt-3">
+      <div className="flex items-center gap-2 rounded-3xl bg-white p-2 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
+        <div className="grid flex-1 grid-cols-3 gap-1" role="group" aria-label="Formato de exporte">
+          {(['pdf', 'xlsx', 'csv'] as const).map((f) => (
+            <button
+              key={f}
+              type="button"
+              aria-pressed={format === f}
+              onClick={() => setFormat(f)}
+              className={`touch-target rounded-2xl text-[14px] font-bold uppercase ${format === f ? 'bg-[#0a84ff]/10 text-[#0a84ff]' : 'text-black/50 dark:text-white/50'}`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            setBusy(true)
+            setError(null)
+            void downloadExport(`${basePath}/export?format=${format}`, `${filename}.${format}`)
+              .catch(() => setError('No se pudo generar el archivo.'))
+              .finally(() => setBusy(false))
+          }}
+          className="pressable touch-target shrink-0 rounded-2xl bg-[#0a84ff] px-4 font-semibold text-white disabled:opacity-60"
+        >
+          {busy ? '…' : 'Exportar'}
+        </button>
+      </div>
+      {error && (
+        <p role="alert" className="mt-2 text-[13px] text-[#ff3b30]">
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function LinkSection() {
+  const links = useLinks()
+  const createCode = useCreateCode()
+  const revoke = useRevokeLink()
+  const [code, setCode] = useState<{ code: string; expires: string } | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const doctors = links.data?.filter((l) => l.doctor_name) ?? []
+
+  return (
+    <section
+      aria-label="Compartir con mi médico"
+      className="rounded-3xl bg-white p-4 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10"
+    >
+      <h2 className="text-[17px]">Compartir con mi médico</h2>
+      <p className="mt-0.5 text-[13px] text-black/50 dark:text-white/50">
+        Genera un código de un solo uso, válido 48 h.
+      </p>
+      {code ? (
+        <p className="mt-2 rounded-2xl bg-[#0a84ff]/10 px-4 py-3 text-center font-mono text-[22px] font-bold tracking-[0.2em] text-[#0a84ff]">
+          {code.code}
+        </p>
+      ) : (
+        <button
+          type="button"
+          disabled={createCode.isPending}
+          onClick={() => {
+            setError(null)
+            createCode.mutate(undefined, {
+              onSuccess: (c) => setCode({ code: c.code, expires: c.expires_at }),
+              onError: (err) => setError(err instanceof ApiError ? err.message : 'No se pudo generar el código.'),
+            })
+          }}
+          className="pressable touch-target mt-2 w-full rounded-2xl bg-[#0a84ff] font-semibold text-white disabled:opacity-60"
+        >
+          {createCode.isPending ? 'Generando…' : 'Generar código'}
+        </button>
+      )}
+      {error && (
+        <p role="alert" className="mt-2 text-[13px] text-[#ff3b30]">
+          {error}
+        </p>
+      )}
+      {links.data && doctors.length > 0 && (
+        <ul className="mt-3 space-y-2">
+          {doctors.map((l) => (
+            <li key={l.id} className="flex items-center justify-between gap-2 rounded-2xl bg-black/5 px-3 py-2 dark:bg-white/10">
+              <span className="text-[14px] font-medium">{l.doctor_name}</span>
+              <button
+                type="button"
+                disabled={revoke.isPending}
+                onClick={() => revoke.mutate(l.id)}
+                className="pressable shrink-0 rounded-xl px-3 py-2 text-[13px] font-semibold text-[#ff3b30]"
+              >
+                Revocar
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
 
@@ -345,7 +467,12 @@ export default function Home() {
             )}
           </>
         )}
-        {tab === 'historial' && <HistoryList />}
+        {tab === 'historial' && (
+          <>
+            <ExportButton basePath="/history" filename="insumap-historial" />
+            <SelfHistory />
+          </>
+        )}
         {tab === 'recordatorios' && <Reminders />}
         {tab === 'asistente' && <Assistant />}
         {tab === 'perfil' && (
@@ -401,6 +528,8 @@ export default function Home() {
                 </p>
               )}
             </section>
+
+            {user?.role !== 'DOCTOR' && <LinkSection />}
 
             <button
               type="button"

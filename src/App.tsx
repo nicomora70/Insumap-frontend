@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router'
 import { useAuth } from './lib/auth'
 import Home from './pages/Home'
+import DoctorHome from './pages/Doctor'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import type { JSX } from 'react'
@@ -16,6 +17,12 @@ function Protected({ children }: { children: JSX.Element }) {
   }
   if (!user) return <Navigate to="/login" replace />
   return children
+}
+
+function RoleHome() {
+  const { user } = useAuth()
+  if (user?.role === 'DOCTOR') return <DoctorHome />
+  return <Home />
 }
 
 function PublicOnly({ children }: { children: JSX.Element }) {
@@ -54,7 +61,7 @@ export default function App() {
         path="/*"
         element={
           <Protected>
-            <Home />
+            <RoleHome />
           </Protected>
         }
       />

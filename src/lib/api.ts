@@ -7,6 +7,15 @@ export type LoginRequest = components['schemas']['LoginRequest']
 export type ErrorResponse = components['schemas']['ErrorResponse']
 
 const API_BASE = `${import.meta.env.VITE_API_URL ?? 'https://insumap-backend.onrender.com'}/api/v1`
+
+export function apiBase(): string {
+  return API_BASE
+}
+
+export function authHeaders(): Record<string, string> {
+  const token = getAccessToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 const ACCESS_KEY = 'insumap_at'
 
 export function getAccessToken(): string | null {
