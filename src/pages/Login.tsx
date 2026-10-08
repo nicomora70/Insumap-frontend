@@ -44,7 +44,7 @@ export default function Login() {
       subtitle="Accede para ver tu mapa y registrar tus dosis."
       footer={<AuthFooter to="/register" cta="¿Aún no tienes cuenta?" linkLabel="Crea una" />}
     >
-      <form onSubmit={void handleSubmit(onSubmit)} noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <label className="block text-[14px] font-semibold" htmlFor="login-email">
           Email
         </label>

@@ -76,7 +76,7 @@ export default function Register() {
       subtitle="Tus datos de salud solo los ves tú y los médicos que autorices."
       footer={<AuthFooter to="/login" cta="¿Ya tienes cuenta?" linkLabel="Entra" />}
     >
-      <form onSubmit={void handleSubmit(onSubmit)} noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <label className="block text-[14px] font-semibold" htmlFor="reg-name">
           Nombre
         </label>
