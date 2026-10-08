@@ -74,12 +74,12 @@ export async function ensurePushSubscription(): Promise<'subscribed' | 'denied' 
   }
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') return 'denied'
-  const { public_key } = await apiFetch<Record<string, string>>('/push/vapid-public-key')
+  const vapid = await apiFetch<Record<string, string>>('/push/vapid-public-key')
+  const key = vapid.public_key ?? Object.values(vapid)[0]
+  if (!key) return 'unsupported'
   const reg = await navigator.serviceWorker.ready
   let sub = await reg.pushManager.getSubscription()
   if (!sub) {
-    const json = { public_key }
-    const key = json.public_key ?? json.publicKey ?? Object.values(json)[0]
     sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) })
   }
   const subJson = sub.toJSON()
