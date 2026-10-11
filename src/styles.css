@@ -1,0 +1,220 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Insumap · Design tokens (paleta lavanda/rosa de la referencia)
+   ============================================================ */
+@theme {
+  --font-sans: "Nunito", ui-rounded, "Segoe UI Rounded", "SF Pro Rounded",
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+
+  /* --- Superficies claras --- */
+  --color-app-bg: #f2eefa;
+  --color-card: #ffffff;
+  --color-plum: #241d3d;
+  --color-plum-strong: #191231;
+  --color-muted: #877fa3;
+
+  /* --- Morado principal (botones, nav activa) --- */
+  --color-primary: #6c4fd8;
+  --color-primary-strong: #5a3ec8;
+  --color-primary-soft: #ece6fb;
+  --color-primary-ink: #4b2fa5;
+  --color-ring: #8b5cf6;
+
+  /* --- Tarjeta rosa destacada (hero de la referencia) --- */
+  --color-pink: #fbd8e6;
+  --color-pink-ink: #b23c72;
+
+  /* --- Tiles pastel (chips de icono) --- */
+  --color-sky: #dbe9fd;
+  --color-sky-ink: #2f5f9e;
+  --color-mint: #d3f0e3;
+  --color-mint-ink: #0d6a4a;
+  --color-lemon: #fdf0c8;
+  --color-lemon-ink: #8a6100;
+  --color-peach: #ffe4cd;
+  --color-peach-ink: #a8561d;
+  --color-bubble: #fbd8e6;
+  --color-bubble-ink: #b23c72;
+
+  /* --- Recuperación: nunca solo color (RNF-05) --- */
+  --color-mz-red: #b3261e;
+  --color-mz-red-soft: #fbe0dd;
+  --color-mz-yellow: #8a6100;
+  --color-mz-yellow-soft: #fdf0c8;
+  --color-mz-green: #0d6a4a;
+  --color-mz-green-soft: #d3f0e3;
+
+  /* --- Cuerpo 3D --- */
+  --color-body: #d9d2ec;
+  --color-body-red: #f0a19c;
+  --color-body-yellow: #f5cf8d;
+  --color-body-green: #a9e0c6;
+
+  /* --- Oscuro: ciruela profunda --- */
+  --color-app-bg-dark: #150f22;
+  --color-card-dark: #201931;
+  --color-plum-dark: #f2edfb;
+  --color-muted-dark: #b6abcc;
+  --color-primary-dark: #c3b2f2;
+  --color-primary-ink-dark: #2c1b5e;
+
+  /* Muelle (apple-design): UI por defecto críticamente amortiguada */
+  --spring-response: 0.35s;
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+:root {
+  color-scheme: light dark;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-app-bg);
+  color: var(--color-plum);
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+h1,
+h2 {
+  color: var(--color-plum-strong);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+/* Tarjetas suaves */
+.card {
+  background: var(--color-card);
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgb(76 51 144 / 0.07);
+}
+@media (prefers-color-scheme: dark) {
+  body {
+    background: var(--color-app-bg-dark);
+    color: var(--color-plum-dark);
+  }
+  h1,
+  h2 {
+    color: var(--color-plum-dark);
+  }
+  .card {
+    background: var(--color-card-dark);
+    box-shadow: none;
+    border: 1px solid rgb(255 255 255 / 0.08);
+  }
+}
+
+/* Cromo translúcido: el contenido pasa por debajo */
+.chrome-translucent {
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  background: color-mix(in srgb, var(--color-app-bg) 78%, transparent);
+}
+
+/* Foco de teclado visible siempre */
+.focus-ring:focus-visible {
+  outline: 3px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+/* Mínimos táctiles: todo objetivo interactivo ≥44px */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Patrones de recuperación: el estado nunca depende solo del color */
+.pattern-red {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent 0 6px,
+    rgb(0 0 0 / 0.08) 6px 7px
+  );
+}
+.pattern-yellow {
+  background-image: radial-gradient(rgb(0 0 0 / 0.14) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+.pattern-green {
+  background-image: none;
+}
+
+/* Feedback táctil con muelle */
+.pressable {
+  transition:
+    transform var(--spring-response) var(--ease-spring),
+    box-shadow var(--spring-response) var(--ease-spring),
+    background-color 0.15s ease-out;
+}
+.pressable:active {
+  transform: scale(0.96);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pressable:active {
+    transform: none;
+  }
+}
+
+/* Movimiento reducido: fundido, nunca deslizar/muelle */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Scroll horizontal de chips sin barra visible */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Aparición suave de página */
+@keyframes insumap-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.page-enter {
+  animation: insumap-fade-in 0.18s ease-out both;
+}
+.fade-enter {
+  animation: insumap-fade-in 0.2s ease-out both;
+}
+
+/* Hoja inferior (bottom sheet) */
+@keyframes insumap-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.sheet-enter {
+  animation: insumap-sheet-up 0.32s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .fade-enter,
+  .sheet-enter {
+    animation: none;
+  }
+}
