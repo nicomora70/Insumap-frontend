@@ -16,33 +16,33 @@
 
 ### Color Palette
 
+Paleta implementada en `src/styles.css` (@theme de Tailwind 4). Referencia: tarjeta rosa + lavanda del mockup aprobado.
+
 | Role | Hex | CSS Variable |
 |------|-----|--------------|
-| Primary | `#0891B2` | `--color-primary` |
-| On Primary | `#000000` | `--color-on-primary` |
-| Secondary | `#22D3EE` | `--color-secondary` |
-| On Secondary | `#0F172A` | `--color-on-secondary` |
-| Accent/CTA | `#059669` | `--color-accent` |
-| On Accent/CTA | `#000000` | `--color-on-accent` |
-| Background | `#ECFEFF` | `--color-background` |
-| Foreground | `#164E63` | `--color-foreground` |
+| Background | `#F2EEFA` | `--color-app-bg` |
 | Card | `#FFFFFF` | `--color-card` |
-| Card Foreground | `#164E63` | `--color-card-foreground` |
-| Muted | `#E8F1F6` | `--color-muted` |
-| Muted Foreground | `#475569` | `--color-muted-foreground` |
-| Border | `#A5F3FC` | `--color-border` |
-| Destructive | `#DC2626` | `--color-destructive` |
-| On Destructive | `#FFFFFF` | `--color-on-destructive` |
-| Ring | `#0891B2` | `--color-ring` |
+| Foreground (tinta) | `#241D3D` | `--color-plum` |
+| Foreground strong | `#191231` | `--color-plum-strong` |
+| Muted foreground | `#877FA3` | `--color-muted` |
+| Primary (CTA) | `#6C4FD8` | `--color-primary` |
+| Primary strong | `#5A3EC8` | `--color-primary-strong` |
+| Primary soft (chips) | `#ECE6FB` | `--color-primary-soft` |
+| Primary ink | `#4B2FA5` | `--color-primary-ink` |
+| Hero card (rosa) | `#FBD8E6` | `--color-pink` / `--color-bubble` |
+| Hero ink | `#B23C72` | `--color-pink-ink` |
+| Tiles: sky / mint / lemon / peach | `#DBE9FD` `#D3F0E3` `#FDF0C8` `#FFE4CD` | `--color-sky` `--color-mint` `--color-lemon` `--color-peach` |
+| Recuperación RED / YELLOW / GREEN | `#B3261E` `#8A6100` `#0D6A4A` | `--color-mz-red` `--color-mz-yellow` `--color-mz-green` |
+| Ring (foco) | `#8B5CF6` | `--color-ring` |
+| Dark: fondo / tarjeta | `#150F22` / `#201931` | `--color-app-bg-dark` `--color-card-dark` |
 
-**Color Notes:** Calm cyan + health green
+**Color Notes:** lavanda + rosa pastel con CTA morado; el estado de recuperación nunca va solo con color (siempre ícono + patrón + palabra, RNF-05).
 
 ### Typography
 
-- **Heading Font:** Figtree
-- **Body Font:** Noto Sans
-- **Mood:** medical, clean, accessible, professional, healthcare, trustworthy
-- **Google Fonts:** [Figtree + Noto Sans](https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&family=Noto+Sans:wght@300;400;500;700&display=swap)
+- **Font:** Nunito (400/600/700/800/900), una sola familia para todo.
+- **Mood:** suave, redondeada, cercana; jerarquía con peso (800/900) y no con mayúsculas.
+- **Google Fonts:** [Nunito](https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap)
 
 **CSS Import:**
 ```css
@@ -164,21 +164,21 @@
 
 ## Style Guidelines
 
-**Style:** Neumorphism
+**Style:** Soft pastel cards (mobile first) — implementado con Tailwind 4 en `src/styles.css`
 
-**Keywords:** Soft UI, embossed, debossed, convex, concave, light source, subtle depth, rounded (12-16px), monochromatic
+**Keywords:** tarjetas redondeadas (24–28px), superficies planas, sombras muy suaves, lavanda/rosa, CTA morado, densidad táctil (≥44px), nav inferior flotante y sidebar en escritorio
 
-**Best For:** Health/wellness apps, meditation platforms, fitness trackers, minimal interaction UIs
+**Best For:** apps de salud y bienestar con uso en una mano
 
-**Key Effects:** Soft box-shadow (multiple: -5px -5px 15px, 5px 5px 15px), smooth press (150ms), inner subtle shadow
+**Key Effects:** press con muelle (`cubic-bezier(0.32, 0.72, 0, 1)`, 150ms), fundido de página, hoja inferior deslizante; `prefers-reduced-motion` respetado
 
 ### Page Pattern
 
-**Pattern Name:** Hero + Testimonials + CTA
+**Pattern Name:** App shell con tarjeta destacada
 
-- **Conversion Strategy:** Social proof before CTA. Use a concise set of verified testimonials with photo, name, and role. CTA after social proof. Provide previous/next and pause controls; stop rotation on focus, hover, and reduced motion; announce slide position. Previous/next buttons and keyboard controls must expose every slide without dragging.
-- **CTA Placement:** Hero (sticky) + Post-testimonials
-- **Section Order:** Hero > Problem statement > Solution overview > Testimonials carousel > CTA
+- **Estructura móvil:** saludo + avatar → tarjeta destacada (rosa) con CTA → buscador → chips de macrozonas → accesos rápidos → mapa (cuerpo 3D o lista) → nav inferior flotante.
+- **Estructura escritorio (lg):** sidebar fija + contenido hasta ~1152px; el médico ve mapa e historial en dos columnas.
+- **CTA Placement:** dentro de la tarjeta destacada (primario morado) y accesos rápidos en tiles pastel.
 
 ---
 
