@@ -1,10 +1,26 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
+import {
+  BellRing,
+  Check,
+  Copy,
+  FileDown,
+  History as HistoryIcon,
+  KeyRound,
+  LogOut,
+  Map as MapIcon,
+  Sparkles,
+  Star,
+  Syringe,
+  TriangleAlert,
+  UserRound,
+  X,
+} from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { AppShell } from '../components/AppShell'
-import BodyMap from '../components/BodyMap'
-import type { MacroCode } from '../components/BodyMap'
-import { parseMacro, parseSide } from '../components/BodyMap'
+import Body3D from '../components/Body3D'
+import { parseMacro, parseSide } from '../lib/body'
+import type { MacroCode } from '../lib/body'
 import { MicrozoneSheet, ZoomGrid } from '../components/MicrozoneSheet'
 import { useHistory, statusBadge, formatAppliedAt } from '../lib/history'
 import type { InjectionOut } from '../lib/history'
@@ -21,24 +37,25 @@ import {
 import type { CellOut, MapResponse } from '../lib/injections'
 import Reminders from './Reminders'
 import Assistant from './Assistant'
+import { Avatar, Button, Card, EmptyState, ErrorState, FieldError, SkeletonList, Tile } from '../components/ui'
 
-type Tab = 'mapa' | 'historial' | 'recordatorios' | 'asistente' | 'perfil'
+export type Tab = 'mapa' | 'historial' | 'dosis' | 'ayuda' | 'perfil'
 
-const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: 'mapa', label: 'Mapa', icon: '◉' },
-  { id: 'historial', label: 'Historial', icon: '☰' },
-  { id: 'recordatorios', label: 'Dosis', icon: '⏰' },
-  { id: 'asistente', label: 'Ayuda', icon: '✦' },
-  { id: 'perfil', label: 'Perfil', icon: '○' },
+const TABS: { id: Tab; label: string; Icon: typeof MapIcon }[] = [
+  { id: 'mapa', label: 'Mapa', Icon: MapIcon },
+  { id: 'historial', label: 'Historial', Icon: HistoryIcon },
+  { id: 'dosis', label: 'Dosis', Icon: BellRing },
+  { id: 'ayuda', label: 'Ayuda', Icon: Sparkles },
+  { id: 'perfil', label: 'Perfil', Icon: UserRound },
 ]
 
 const CELL_STYLE: Record<CellOut['color'], string> = {
-  RED: 'bg-[#ff3b30]/15 text-[#ff3b30] pattern-red',
-  YELLOW: 'bg-[#ffcc00]/20 text-[#8a6d00] pattern-yellow dark:text-[#ffd60a]',
-  GREEN: 'bg-[#34c759]/15 text-[#248a3d] pattern-green dark:text-[#30d158]',
+  RED: 'bg-mz-red-soft text-mz-red pattern-red',
+  YELLOW: 'bg-mz-yellow-soft text-mz-yellow pattern-yellow',
+  GREEN: 'bg-mz-green-soft text-mz-green pattern-green',
 }
 
-const CELL_ICON: Record<CellOut['color'], string> = { RED: '●', YELLOW: '◐', GREEN: '○' }
+const CELL_ICON: Record<CellOut['color'], typeof Check> = { RED: X, YELLOW: TriangleAlert, GREEN: Check }
 
 const COLOR_LABEL: Record<CellOut['color'], string> = {
   RED: 'roja, en recuperación',
@@ -57,45 +74,43 @@ function MacroCard({
 }) {
   const cols = gridSize <= 2 ? 2 : gridSize <= 4 ? 4 : 3
   return (
-    <section
-      aria-label={zone.label}
-      className="rounded-3xl bg-white p-4 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10"
-    >
+    <Card label={zone.label}>
       <h2 className="text-[17px]">{zone.label}</h2>
       <div className="mt-3 grid grid-cols-2 gap-3">
         {zone.sides.map((s) => (
           <div key={s.side}>
-            <p className="mb-1 text-[12px] font-semibold text-black/40 dark:text-white/40">
+            <p className="mb-1 text-[12px] font-extrabold text-muted dark:text-muted-dark">
               {s.side === 'I' ? 'Izquierdo' : 'Derecho'}
             </p>
             <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} role="group" aria-label={`${zone.label} lado ${s.side}`}>
-              {s.cells.map((cell) => (
-                <button
-                  key={cell.id}
-                  type="button"
-                  aria-label={`Microzona ${cell.id}, ${COLOR_LABEL[cell.color]}`}
-                  data-microzone={cell.id}
-                  onClick={() => onTap(cell)}
-                  className={`touch-target pressable flex items-center justify-center rounded-xl text-[13px] font-bold ${CELL_STYLE[cell.color]}`}
-                >
-                  <span aria-hidden="true">{CELL_ICON[cell.color]}</span>
-                </button>
-              ))}
+              {s.cells.map((cell) => {
+                const Icon = CELL_ICON[cell.color]
+                return (
+                  <button
+                    key={cell.id}
+                    type="button"
+                    aria-label={`Microzona ${cell.id}, ${COLOR_LABEL[cell.color]}`}
+                    data-microzone={cell.id}
+                    onClick={() => onTap(cell)}
+                    className={`touch-target pressable focus-ring flex items-center justify-center rounded-xl ${CELL_STYLE[cell.color]}`}
+                  >
+                    <Icon aria-hidden="true" size={16} strokeWidth={3} />
+                  </button>
+                )
+              })}
             </div>
           </div>
         ))}
       </div>
-    </section>
+    </Card>
   )
 }
 
 function MapSkeleton() {
   return (
-    <div className="space-y-3 px-4 pb-32 pt-3" aria-label="Cargando mapa">
-      <div className="h-44 animate-pulse rounded-3xl bg-black/5 dark:bg-white/10" />
-      {[0, 1].map((i) => (
-        <div key={i} className="h-64 animate-pulse rounded-3xl bg-black/5 dark:bg-white/10" />
-      ))}
+    <div className="space-y-3 px-4 pt-3" aria-label="Cargando mapa">
+      <div className="h-36 animate-pulse rounded-[24px] bg-bubble/70 dark:bg-white/10" />
+      <div className="h-[420px] animate-pulse rounded-[24px] bg-primary-soft/70 dark:bg-white/10" />
     </div>
   )
 }
@@ -106,18 +121,18 @@ function HistoryRow({ item }: { item: InjectionOut }) {
   const [hm, meridiem] = time.split(' ')
   const hour = hm?.split(':')[0] ?? ''
   return (
-    <li className="flex items-center gap-3 rounded-3xl bg-white px-4 py-3 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
-      <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-2xl bg-[#0a84ff]/10 leading-none">
-        <span className="text-[15px] font-bold text-[#0a84ff]">{hour}</span>
-        <span className="text-[10px] font-semibold text-[#0a84ff]/70">{meridiem ?? ''}</span>
+    <li className="card flex items-center gap-3 px-4 py-3">
+      <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-2xl bg-primary-soft leading-none dark:bg-white/10">
+        <span className="text-[15px] font-extrabold text-primary-ink dark:text-primary-dark">{hour}</span>
+        <span className="text-[10px] font-extrabold text-primary-ink/70 dark:text-primary-dark/70">{meridiem ?? ''}</span>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-mono text-[15px] font-semibold">{item.microzone_id}</p>
-        <p className="text-[13px] text-black/50 dark:text-white/50">
+        <p className="truncate font-mono text-[15px] font-bold">{item.microzone_id}</p>
+        <p className="text-[13px] font-semibold text-muted dark:text-muted-dark">
           {date} · {time} · {item.macro}
         </p>
       </div>
-      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[12px] font-semibold ${badge.className}`}>
+      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[12px] font-extrabold ${badge.className}`}>
         {badge.text}
       </span>
     </li>
@@ -139,56 +154,41 @@ export function HistoryView({ query }: { query: HistoryViewData }) {
 
   if (query.isPending) {
     return (
-      <div className="space-y-2 px-4 pb-32 pt-3" aria-label="Cargando historial">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-16 animate-pulse rounded-3xl bg-black/5 dark:bg-white/10" />
-        ))}
+      <div className="px-4 pt-3 lg:px-8">
+        <SkeletonList label="Cargando historial" />
       </div>
     )
   }
 
   if (query.isError) {
-    return (
-      <div className="mx-auto flex max-w-md flex-col items-center px-6 pb-32 pt-16 text-center">
-        <p className="text-[15px] font-semibold">No pudimos cargar tu historial</p>
-        <button
-          type="button"
-          onClick={() => query.refetch()}
-          className="pressable touch-target mt-4 w-full rounded-2xl bg-[#0a84ff] font-semibold text-white"
-        >
-          Reintentar
-        </button>
-      </div>
-    )
+    return <ErrorState title="No pudimos cargar tu historial" onRetry={() => query.refetch()} />
   }
 
   if (items.length === 0) {
     return (
-      <div className="mx-auto flex max-w-md flex-col items-center px-6 pb-32 pt-16 text-center">
-        <p className="text-[15px] font-semibold">Aún no hay aplicaciones registradas</p>
-        <p className="mt-1 text-[14px] text-black/50 dark:text-white/50">
-          Registra tu primera dosis desde el mapa y aparecerá aquí.
-        </p>
-      </div>
+      <EmptyState
+        title="Aún no hay aplicaciones registradas"
+        hint="Registra tu primera dosis desde el mapa y aparecerá aquí."
+      />
     )
   }
 
   return (
-    <div className="px-4 pb-32 pt-3">
+    <div className="px-4 pt-3 lg:px-8">
       <ul className="space-y-2">
         {items.map((item) => (
           <HistoryRow key={item.id} item={item} />
         ))}
       </ul>
       {query.hasNextPage && (
-        <button
-          type="button"
+        <Button
+          variant="soft"
           disabled={query.isFetchingNextPage}
           onClick={() => void query.fetchNextPage()}
-          className="pressable touch-target mt-3 w-full rounded-2xl bg-black/5 font-semibold dark:bg-white/10"
+          className="mt-3 w-full"
         >
           {query.isFetchingNextPage ? 'Cargando…' : 'Ver más'}
-        </button>
+        </Button>
       )}
     </div>
   )
@@ -204,41 +204,41 @@ export function ExportButton({ basePath, filename }: { basePath: string; filenam
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   return (
-    <div className="px-4 pt-3">
-      <div className="flex items-center gap-2 rounded-3xl bg-white p-2 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
-        <div className="grid flex-1 grid-cols-3 gap-1" role="group" aria-label="Formato de exporte">
-          {(['pdf', 'xlsx', 'csv'] as const).map((f) => (
-            <button
-              key={f}
-              type="button"
-              aria-pressed={format === f}
-              onClick={() => setFormat(f)}
-              className={`touch-target rounded-2xl text-[14px] font-bold uppercase ${format === f ? 'bg-[#0a84ff]/10 text-[#0a84ff]' : 'text-black/50 dark:text-white/50'}`}
-            >
-              {f}
-            </button>
-          ))}
+    <div className="px-4 pt-3 lg:px-8">
+      <Card>
+        <div className="flex items-center gap-2">
+          <div className="grid flex-1 grid-cols-3 gap-1" role="group" aria-label="Formato de exporte">
+            {(['pdf', 'xlsx', 'csv'] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                aria-pressed={format === f}
+                onClick={() => setFormat(f)}
+                className={`touch-target focus-ring rounded-2xl text-[14px] font-extrabold uppercase ${format === f ? 'bg-primary-soft text-primary-ink dark:bg-white/10 dark:text-primary-dark' : 'text-muted dark:text-muted-dark'}`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <Button
+            disabled={busy}
+            onClick={() => {
+              setBusy(true)
+              setError(null)
+              void downloadExport(`${basePath}/export?format=${format}`, `${filename}.${format}`)
+                .catch(() => setError('No se pudo generar el archivo.'))
+                .finally(() => setBusy(false))
+            }}
+            className="shrink-0"
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <FileDown aria-hidden="true" size={18} />
+              {busy ? '…' : 'Exportar'}
+            </span>
+          </Button>
         </div>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => {
-            setBusy(true)
-            setError(null)
-            void downloadExport(`${basePath}/export?format=${format}`, `${filename}.${format}`)
-              .catch(() => setError('No se pudo generar el archivo.'))
-              .finally(() => setBusy(false))
-          }}
-          className="pressable touch-target shrink-0 rounded-2xl bg-[#0a84ff] px-4 font-semibold text-white disabled:opacity-60"
-        >
-          {busy ? '…' : 'Exportar'}
-        </button>
-      </div>
-      {error && (
-        <p role="alert" className="mt-2 text-[13px] text-[#ff3b30]">
-          {error}
-        </p>
-      )}
+      </Card>
+      <FieldError message={error ?? undefined} />
     </div>
   )
 }
@@ -248,25 +248,40 @@ function LinkSection() {
   const createCode = useCreateCode()
   const revoke = useRevokeLink()
   const [code, setCode] = useState<{ code: string; expires: string } | null>(null)
+  const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const doctors = links.data?.filter((l) => l.doctor_name) ?? []
 
   return (
-    <section
-      aria-label="Compartir con mi médico"
-      className="rounded-3xl bg-white p-4 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10"
-    >
-      <h2 className="text-[17px]">Compartir con mi médico</h2>
-      <p className="mt-0.5 text-[13px] text-black/50 dark:text-white/50">
+    <Card label="Compartir con mi médico">
+      <h2 className="flex items-center gap-2 text-[17px]">
+        <KeyRound aria-hidden="true" size={18} className="text-primary dark:text-primary-dark" />
+        Compartir con mi médico
+      </h2>
+      <p className="mt-0.5 text-[13px] font-semibold text-muted dark:text-muted-dark">
         Genera un código de un solo uso, válido 48 h.
       </p>
       {code ? (
-        <p className="mt-2 rounded-2xl bg-[#0a84ff]/10 px-4 py-3 text-center font-mono text-[22px] font-bold tracking-[0.2em] text-[#0a84ff]">
-          {code.code}
-        </p>
+        <div className="mt-2 flex items-center gap-2 rounded-2xl bg-primary-soft px-4 py-3 dark:bg-white/10">
+          <p className="flex-1 text-center font-mono text-[22px] font-black tracking-[0.2em] text-primary-ink dark:text-primary-dark">
+            {code.code}
+          </p>
+          <button
+            type="button"
+            aria-label="Copiar código"
+            onClick={() => {
+              void navigator.clipboard?.writeText(code.code).then(
+                () => setCopied(true),
+                () => setCopied(false),
+              )
+            }}
+            className="pressable focus-ring touch-target w-11 shrink-0 rounded-2xl text-primary-ink dark:text-primary-dark"
+          >
+            {copied ? <Check aria-hidden="true" size={20} className="mx-auto" /> : <Copy aria-hidden="true" size={20} className="mx-auto" />}
+          </button>
+        </div>
       ) : (
-        <button
-          type="button"
+        <Button
           disabled={createCode.isPending}
           onClick={() => {
             setError(null)
@@ -275,26 +290,22 @@ function LinkSection() {
               onError: (err) => setError(err instanceof ApiError ? err.message : 'No se pudo generar el código.'),
             })
           }}
-          className="pressable touch-target mt-2 w-full rounded-2xl bg-[#0a84ff] font-semibold text-white disabled:opacity-60"
+          className="mt-2 w-full"
         >
           {createCode.isPending ? 'Generando…' : 'Generar código'}
-        </button>
+        </Button>
       )}
-      {error && (
-        <p role="alert" className="mt-2 text-[13px] text-[#ff3b30]">
-          {error}
-        </p>
-      )}
+      <FieldError message={error ?? undefined} />
       {links.data && doctors.length > 0 && (
         <ul className="mt-3 space-y-2">
           {doctors.map((l) => (
-            <li key={l.id} className="flex items-center justify-between gap-2 rounded-2xl bg-black/5 px-3 py-2 dark:bg-white/10">
-              <span className="text-[14px] font-medium">{l.doctor_name}</span>
+            <li key={l.id} className="flex items-center justify-between gap-2 rounded-2xl bg-primary-soft/70 px-3 py-2 dark:bg-white/10">
+              <span className="text-[14px] font-bold">{l.doctor_name}</span>
               <button
                 type="button"
                 disabled={revoke.isPending}
                 onClick={() => revoke.mutate(l.id)}
-                className="pressable shrink-0 rounded-xl px-3 py-2 text-[13px] font-semibold text-[#ff3b30]"
+                className="pressable focus-ring shrink-0 rounded-xl px-3 py-2 text-[13px] font-extrabold text-mz-red"
               >
                 Revocar
               </button>
@@ -302,12 +313,11 @@ function LinkSection() {
           ))}
         </ul>
       )}
-    </section>
+    </Card>
   )
 }
 
-export default function Home() {
-  const [tab, setTab] = useState<Tab>('mapa')
+export default function Home({ tab, onTabChange }: { tab: Tab; onTabChange: (t: Tab) => void }) {
   const { user, logout } = useAuth()
   const mapQuery = useBodyMap()
   const suggestionsQuery = useSuggestions(3)
@@ -342,16 +352,15 @@ export default function Home() {
 
   const gridSize = mapQuery.data?.grid_size ?? 4
 
-  const titles: Record<Tab, string> = {
-    mapa: 'Mapa corporal',
-    historial: 'Historial',
-    recordatorios: 'Mis dosis',
-    asistente: 'Asistente',
-    perfil: 'Perfil',
-  }
-
   return (
-    <AppShell brand="Insumap" title={titles[tab]} tabs={TABS} active={tab} onChange={(id) => setTab(id as Tab)}>
+    <AppShell
+      greeting="Hola,"
+      title={user?.name ?? 'Insumap'}
+      userName={user?.name}
+      tabs={TABS}
+      active={tab}
+      onChange={(id) => onTabChange(id as Tab)}
+    >
       <motion.main
         key={tab}
         initial={{ opacity: 0 }}
@@ -362,42 +371,45 @@ export default function Home() {
           <>
             {mapQuery.isPending && <MapSkeleton />}
             {mapQuery.isError && (
-              <div className="mx-auto flex max-w-md flex-col items-center px-6 pb-32 pt-16 text-center">
-                <p className="text-[15px] font-semibold">No pudimos cargar tu mapa</p>
-                <p className="mt-1 text-[14px] text-black/50 dark:text-white/50">Revisa tu conexión e inténtalo de nuevo.</p>
-                <button
-                  type="button"
-                  onClick={() => mapQuery.refetch()}
-                  className="pressable touch-target mt-4 w-full rounded-2xl bg-[#0a84ff] font-semibold text-white"
-                >
-                  Reintentar
-                </button>
-              </div>
+              <ErrorState title="No pudimos cargar tu mapa" hint="Revisa tu conexión e inténtalo de nuevo." onRetry={() => mapQuery.refetch()} />
             )}
             {mapQuery.data && (
-              <div className="space-y-3 px-4 pb-32 pt-3 md:grid md:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)] md:items-start md:gap-5 md:space-y-0 lg:px-8 lg:pb-10">
+              <div className="space-y-3 px-4 pt-3 md:grid md:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)] md:items-start md:gap-5 md:space-y-0 lg:px-8">
                 {topSuggestion && !zoom && (
                   <section
                     aria-label="Sugerencia para la próxima dosis"
-                    className="rounded-3xl bg-[#0a84ff] p-4 text-white shadow-[0_8px_24px_rgb(10_132_255/0.35)] md:sticky md:top-24 md:col-start-2 md:row-start-1"
+                    className="rounded-[24px] bg-bubble p-4 md:sticky md:top-24 md:col-start-2 md:row-start-1"
                   >
-                    <p className="text-[13px] font-semibold uppercase tracking-wide text-white/70">★ Sugerido ahora</p>
-                    <p className="mt-0.5 text-[20px] font-bold leading-snug">
-                      {describeLocation(topSuggestion.microzone_id, gridSize)}{' '}
-                      <span className="font-mono text-[15px]">({topSuggestion.microzone_id})</span>
-                    </p>
+                    <div className="flex items-start gap-3">
+                      <span
+                        aria-hidden="true"
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-bubble-ink"
+                      >
+                        <Syringe size={24} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wide text-bubble-ink">
+                          <Star aria-hidden="true" size={14} strokeWidth={2.6} />
+                          Sugerido ahora
+                        </p>
+                        <p className="mt-0.5 text-[17px] font-extrabold leading-snug text-plum-strong dark:text-plum-dark">
+                          {describeLocation(topSuggestion.microzone_id, gridSize)}{' '}
+                          <span className="font-mono text-[13px]">({topSuggestion.microzone_id})</span>
+                        </p>
+                      </div>
+                    </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => locate(topSuggestion.microzone_id)}
-                        className="pressable touch-target rounded-2xl bg-white font-semibold text-[#0a84ff]"
+                        className="pressable focus-ring touch-target rounded-2xl bg-primary font-extrabold text-white"
                       >
                         Ver en el mapa
                       </button>
                       <button
                         type="button"
-                        onClick={() => setTab('asistente')}
-                        className="pressable touch-target rounded-2xl bg-white/20 font-semibold text-white"
+                        onClick={() => onTabChange('ayuda')}
+                        className="pressable focus-ring touch-target rounded-2xl bg-white font-extrabold text-primary-ink"
                       >
                         ¿Por qué?
                       </button>
@@ -406,13 +418,14 @@ export default function Home() {
                 )}
 
                 {error && (
-                  <p role="alert" className="rounded-2xl bg-[#ff3b30]/10 px-4 py-3 text-[14px] font-medium text-[#ff3b30]">
+                  <p role="alert" className="flex items-start gap-2 rounded-2xl bg-mz-red-soft px-4 py-3 text-[14px] font-bold text-mz-red">
+                    <TriangleAlert aria-hidden="true" size={18} className="mt-0.5 shrink-0" />
                     {error}
                   </p>
                 )}
 
                 {zoom ? (
-                  <div className="rounded-3xl bg-white py-2 shadow-[0_1px_3px_rgb(0_0_0/0.08)] md:col-span-2 dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
+                  <Card className="py-2 md:col-span-2">
                     <ZoomGrid
                       key={`${zoom.macro}-${zoom.side}`}
                       macro={zoom.macro}
@@ -423,33 +436,39 @@ export default function Home() {
                       onBack={() => setZoom(null)}
                       onSelect={(cell) => setSheetCell(cell)}
                     />
-                  </div>
+                  </Card>
                 ) : (
                   <>
-                    <div className="mx-auto grid w-56 grid-cols-2 gap-1 rounded-2xl bg-black/5 p-1 md:col-start-1 md:mx-0 dark:bg-white/10" role="group" aria-label="Modo de mapa">
+                    <div className="grid grid-cols-3 gap-2 md:col-start-1">
+                      <Tile tone="sky" Icon={HistoryIcon} label="Historial" onClick={() => onTabChange('historial')} />
+                      <Tile tone="lemon" Icon={BellRing} label="Mis dosis" onClick={() => onTabChange('dosis')} />
+                      <Tile tone="mint" Icon={Sparkles} label="Asistente" onClick={() => onTabChange('ayuda')} />
+                    </div>
+
+                    <div className="mx-auto grid w-56 grid-cols-2 gap-1 rounded-2xl bg-primary-soft p-1 md:col-start-1 md:mx-0 dark:bg-white/10" role="group" aria-label="Modo de mapa">
                       {(['body', 'list'] as const).map((m) => (
                         <button
                           key={m}
                           type="button"
                           aria-pressed={mapView === m}
                           onClick={() => setMapView(m)}
-                          className={`touch-target rounded-xl text-[14px] font-semibold ${
-                            mapView === m ? 'bg-white shadow dark:bg-[#1c1c1e]' : 'text-black/50 dark:text-white/50'
+                          className={`touch-target focus-ring rounded-xl text-[14px] font-extrabold ${
+                            mapView === m ? 'bg-card shadow dark:bg-card-dark' : 'text-muted dark:text-muted-dark'
                           }`}
                         >
-                          {m === 'body' ? 'Cuerpo' : 'Lista'}
+                          {m === 'body' ? 'Cuerpo 3D' : 'Lista'}
                         </button>
                       ))}
                     </div>
 
                     {mapView === 'body' ? (
-                      <div className="rounded-3xl bg-white py-3 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
-                        <BodyMap
+                      <Card className="overflow-hidden p-2">
+                        <Body3D
                           map={mapQuery.data}
-                          suggestionId={topSuggestion?.microzone_id ?? null}
+                          suggestionMacro={topSuggestion ? parseMacro(topSuggestion.microzone_id) : null}
                           onSelectMacro={(macro) => setZoom({ macro, side: 'I', highlight: null })}
                         />
-                      </div>
+                      </Card>
                     ) : (
                       mapQuery.data.zones.map((z) => (
                         <MacroCard key={z.macro} zone={z} gridSize={gridSize} onTap={(cell) => setSheetCell(cell)} />
@@ -458,7 +477,7 @@ export default function Home() {
                   </>
                 )}
 
-                <p className="px-1 pt-1 text-[12px] leading-relaxed text-black/40 md:col-span-2 dark:text-white/40">
+                <p className="px-1 pt-1 text-[12px] font-semibold text-muted md:col-span-2 dark:text-muted-dark">
                   Proyecto académico de apoyo a la rotación. No es un dispositivo médico.
                 </p>
               </div>
@@ -471,23 +490,23 @@ export default function Home() {
             <SelfHistory />
           </>
         )}
-        {tab === 'recordatorios' && <Reminders />}
-        {tab === 'asistente' && <Assistant />}
+        {tab === 'dosis' && <Reminders />}
+        {tab === 'ayuda' && <Assistant />}
         {tab === 'perfil' && (
-          <div className="space-y-3 px-4 pb-32 pt-3 md:grid md:grid-cols-2 md:items-start md:gap-4 md:space-y-0 lg:px-8 lg:pb-10">
-            <section className="rounded-3xl bg-white p-4 text-center shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
-              <p className="text-[20px] font-bold">{user?.name}</p>
-              <p className="mt-0.5 text-[14px] text-black/50 dark:text-white/50">
-                {user?.email} · {user?.role === 'DOCTOR' ? 'Médico' : 'Paciente'}
-              </p>
-            </section>
+          <div className="space-y-3 px-4 pt-3 md:grid md:grid-cols-2 md:items-start md:gap-4 md:space-y-0 lg:px-8">
+            <Card className="flex items-center gap-4">
+              <Avatar name={user?.name ?? '?'} size={56} />
+              <div className="min-w-0">
+                <p className="truncate text-[19px] font-black">{user?.name}</p>
+                <p className="truncate text-[14px] font-semibold text-muted dark:text-muted-dark">
+                  {user?.email} · {user?.role === 'DOCTOR' ? 'Médico' : 'Paciente'}
+                </p>
+              </div>
+            </Card>
 
-            <section
-              aria-label="Tamaño de la cuadrícula"
-              className="rounded-3xl bg-white p-4 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10"
-            >
+            <Card label="Tamaño de la cuadrícula">
               <h2 className="text-[17px]">Cuadrícula por lado</h2>
-              <p className="mt-0.5 text-[13px] text-black/50 dark:text-white/50">
+              <p className="mt-0.5 text-[13px] font-semibold text-muted dark:text-muted-dark">
                 Cambiarla reproyecta tu historial a la nueva cuadrícula.
               </p>
               <div className="mt-3 grid grid-cols-3 gap-2" role="group" aria-label="Tamaño de cuadrícula">
@@ -509,10 +528,10 @@ export default function Home() {
                             ),
                         })
                       }}
-                      className={`touch-target pressable rounded-2xl border text-[16px] font-bold disabled:opacity-60 ${
+                      className={`touch-target pressable focus-ring rounded-2xl text-[16px] font-extrabold disabled:opacity-60 ${
                         active
-                          ? 'border-[#0a84ff] bg-[#0a84ff]/10 text-[#0a84ff]'
-                          : 'border-black/10 text-black/60 dark:border-white/10 dark:text-white/60'
+                          ? 'bg-primary text-white'
+                          : 'bg-primary-soft text-primary-ink dark:bg-white/10 dark:text-primary-dark'
                       }`}
                     >
                       {n}×{n}
@@ -520,22 +539,17 @@ export default function Home() {
                   )
                 })}
               </div>
-              {settingsError && (
-                <p role="alert" className="mt-2 text-[13px] text-[#ff3b30]">
-                  {settingsError}
-                </p>
-              )}
-            </section>
+              <FieldError message={settingsError ?? undefined} />
+            </Card>
 
             {user?.role !== 'DOCTOR' && <LinkSection />}
 
-            <button
-              type="button"
-              onClick={() => void logout()}
-              className="pressable touch-target w-full rounded-2xl bg-[#ff3b30]/10 font-semibold text-[#ff3b30]"
-            >
-              Cerrar sesión
-            </button>
+            <Button variant="danger-soft" onClick={() => void logout()} className="w-full">
+              <span className="inline-flex items-center gap-2">
+                <LogOut aria-hidden="true" size={18} />
+                Cerrar sesión
+              </span>
+            </Button>
           </div>
         )}
       </motion.main>
@@ -548,19 +562,18 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed inset-x-0 bottom-24 z-20 mx-auto w-full max-w-lg px-4 lg:bottom-8 lg:left-72 lg:right-auto lg:max-w-md"
+            className="fixed inset-x-0 bottom-28 z-20 mx-auto w-full max-w-lg px-4 lg:bottom-10 lg:left-72 lg:right-auto lg:max-w-md"
           >
-            <div className="chrome-translucent flex items-center justify-between gap-3 rounded-3xl border border-black/5 px-4 py-3 shadow-lg dark:border-white/10">
-              <p className="text-[14px] font-medium">{toast.text}</p>
+            <div className="chrome-translucent flex items-center justify-between gap-3 rounded-[24px] border border-white/70 px-4 py-3 shadow-lg dark:border-white/10">
+              <p className="text-[14px] font-bold">{toast.text}</p>
               {toast.canUndo && (
-                <button
-                  type="button"
+                <Button
                   disabled={undo.isPending}
                   onClick={() => void doUndo()}
-                  className="pressable shrink-0 rounded-2xl bg-[#0a84ff] px-4 py-2 text-[14px] font-semibold text-white disabled:opacity-60"
+                  className="shrink-0"
                 >
                   {undo.isPending ? '…' : 'Deshacer'}
-                </button>
+                </Button>
               )}
             </div>
           </motion.div>

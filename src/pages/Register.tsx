@@ -3,9 +3,11 @@ import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { HeartPulse, Stethoscope } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { ApiError } from '../lib/api'
-import { AuthFooter, AuthShell, FieldError, SubmitButton, inputClass } from './AuthShell'
+import { AuthFooter, AuthShell } from './AuthShell'
+import { Button, FieldError, FieldLabel, inputClass } from '../components/ui'
 
 const schema = z
   .object({
@@ -32,6 +34,11 @@ const schema = z
   })
 
 type Form = z.infer<typeof schema>
+
+const ROLES = [
+  { value: 'PATIENT', label: 'Paciente', Icon: HeartPulse },
+  { value: 'DOCTOR', label: 'Médico', Icon: Stethoscope },
+] as const
 
 export default function Register() {
   const { register: signup } = useAuth()
@@ -77,15 +84,13 @@ export default function Register() {
       footer={<AuthFooter to="/login" cta="¿Ya tienes cuenta?" linkLabel="Entra" />}
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <label className="block text-[14px] font-semibold" htmlFor="reg-name">
-          Nombre
-        </label>
+        <FieldLabel htmlFor="reg-name">Nombre</FieldLabel>
         <input id="reg-name" autoComplete="name" placeholder="Ana" className={`${inputClass} mt-1`} {...register('name')} />
         <FieldError message={errors.name?.message} />
 
-        <label className="mt-4 block text-[14px] font-semibold" htmlFor="reg-email">
-          Email
-        </label>
+        <div className="mt-4">
+          <FieldLabel htmlFor="reg-email">Email</FieldLabel>
+        </div>
         <input
           id="reg-email"
           type="email"
@@ -96,9 +101,9 @@ export default function Register() {
         />
         <FieldError message={errors.email?.message} />
 
-        <label className="mt-4 block text-[14px] font-semibold" htmlFor="reg-password">
-          Contraseña
-        </label>
+        <div className="mt-4">
+          <FieldLabel htmlFor="reg-password">Contraseña</FieldLabel>
+        </div>
         <input
           id="reg-password"
           type="password"
@@ -110,34 +115,32 @@ export default function Register() {
         <FieldError message={errors.password?.message} />
 
         <fieldset className="mt-4">
-          <legend className="text-[14px] font-semibold">Soy</legend>
+          <legend className="text-[14px] font-bold">Soy</legend>
           <div className="mt-1 grid grid-cols-2 gap-2">
-            {(
-              [
-                { value: 'PATIENT', label: 'Paciente' },
-                { value: 'DOCTOR', label: 'Médico' },
-              ] as const
-            ).map((opt) => (
-              <label
-                key={opt.value}
-                className={`touch-target pressable flex cursor-pointer items-center justify-center rounded-2xl border text-[15px] font-semibold ${
-                  role === opt.value
-                    ? 'border-[#0a84ff] bg-[#0a84ff]/10 text-[#0a84ff]'
-                    : 'border-black/10 text-black/60 dark:border-white/10 dark:text-white/60'
-                }`}
-              >
-                <input type="radio" value={opt.value} className="sr-only" {...register('role')} />
-                {opt.label}
-              </label>
-            ))}
+            {ROLES.map((opt) => {
+              const Icon = opt.Icon
+              const selected = role === opt.value
+              return (
+                <label
+                  key={opt.value}
+                  className={`touch-target pressable focus-ring flex cursor-pointer items-center justify-center gap-2 rounded-2xl border text-[15px] font-bold ${
+                    selected
+                      ? 'border-primary bg-primary-soft text-primary-ink dark:border-primary-dark dark:bg-white/10 dark:text-primary-dark'
+                      : 'border-black/10 text-muted dark:border-white/15 dark:text-muted-dark'
+                  }`}
+                >
+                  <input type="radio" value={opt.value} className="sr-only" {...register('role')} />
+                  <Icon aria-hidden="true" size={18} />
+                  {opt.label}
+                </label>
+              )
+            })}
           </div>
         </fieldset>
 
         {role === 'DOCTOR' && (
-          <>
-            <label className="mt-4 block text-[14px] font-semibold" htmlFor="reg-license">
-              Registro profesional
-            </label>
+          <div className="mt-4">
+            <FieldLabel htmlFor="reg-license">Registro profesional</FieldLabel>
             <input
               id="reg-license"
               placeholder="N.º de tarjeta profesional"
@@ -145,17 +148,19 @@ export default function Register() {
               {...register('license_number')}
             />
             <FieldError message={errors.license_number?.message} />
-          </>
+          </div>
         )}
 
         <label className="mt-4 flex cursor-pointer items-start gap-2 text-[14px]">
-          <input type="checkbox" className="mt-1 h-5 w-5 accent-[#0a84ff]" {...register('accept_terms')} />
+          <input type="checkbox" className="mt-1 h-5 w-5 accent-[#6b4bc4]" {...register('accept_terms')} />
           Acepto el tratamiento de mis datos de salud según lo descrito en la app.
         </label>
         <FieldError message={errors.accept_terms?.message} />
         <FieldError message={serverError ?? undefined} />
 
-        <SubmitButton pending={isSubmitting} label="Crear cuenta" />
+        <Button type="submit" disabled={isSubmitting} className="mt-5 w-full">
+          {isSubmitting ? 'Un momento…' : 'Crear cuenta'}
+        </Button>
       </form>
     </AuthShell>
   )

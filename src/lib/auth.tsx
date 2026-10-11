@@ -80,3 +80,12 @@ export function useAuth(): AuthState {
   if (!ctx) throw new Error('useAuth debe usarse dentro de AuthProvider')
   return ctx
 }
+
+/** HU-22: recuperación de contraseña (siempre responde igual, no revela si el email existe). */
+export function requestPasswordReset(email: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/auth/forgot-password', { method: 'POST', body: { email } })
+}
+
+export function resetPassword(token: string, new_password: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/auth/reset-password', { method: 'POST', body: { token, new_password } })
+}

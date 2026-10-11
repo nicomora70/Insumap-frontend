@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
+/** Marco de autenticación pastel: fondo crema con burbujas y tarjeta suave. */
 export function AuthShell({ title, subtitle, children, footer }: {
   title: string
   subtitle: string
@@ -8,39 +9,29 @@ export function AuthShell({ title, subtitle, children, footer }: {
   footer: ReactNode
 }) {
   return (
-    <div className="mx-auto flex min-h-svh w-full max-w-lg flex-col bg-[#f2f2f7] px-5 pb-10 pt-[max(3rem,env(safe-area-inset-top))] dark:bg-black">
-      <p className="text-[13px] font-semibold uppercase tracking-wide text-[#0a84ff]">Insumap</p>
-      <h1 className="mt-1 text-[28px] leading-tight text-[#1c1c1e] dark:text-white">{title}</h1>
-      <p className="mt-1 text-[15px] text-black/50 dark:text-white/50">{subtitle}</p>
-      <div className="mt-6 rounded-3xl bg-white p-5 shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-[#1c1c1e] dark:shadow-none dark:ring-1 dark:ring-white/10">
-        {children}
+    <div className="relative min-h-svh overflow-hidden bg-app-bg dark:bg-app-bg-dark">
+      {/* Burbujas decorativas pastel */}
+      <div aria-hidden="true" className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-primary-soft blur-2xl dark:bg-white/5" />
+      <div aria-hidden="true" className="pointer-events-none absolute -right-20 top-40 h-60 w-60 rounded-full bg-bubble blur-2xl dark:bg-white/5" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 left-10 h-64 w-64 rounded-full bg-mint blur-2xl dark:bg-white/5" />
+
+      <div className="relative mx-auto flex min-h-svh w-full max-w-md flex-col justify-center px-5 py-10">
+        <div className="mb-5 flex items-center gap-2.5">
+          <span className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-primary text-white shadow-[0_10px_24px_rgb(107_75_196/0.35)] dark:bg-primary-dark dark:text-primary-ink-dark">
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
+              <path d="M12 3c3.5 4.2 6 7.6 6 10.6a6 6 0 1 1-12 0C6 10.6 8.5 7.2 12 3Z" />
+            </svg>
+          </span>
+          <p className="text-[20px] font-black text-primary dark:text-primary-dark">Insumap</p>
+        </div>
+
+        <h1 className="text-[30px] leading-tight">{title}</h1>
+        <p className="mt-1 text-[15px] font-semibold text-muted dark:text-muted-dark">{subtitle}</p>
+
+        <div className="card mt-5 p-5">{children}</div>
+        <div className="mt-4 text-center text-[14px] font-semibold text-muted dark:text-muted-dark">{footer}</div>
       </div>
-      <div className="mt-4 text-center text-[14px] text-black/50 dark:text-white/50">{footer}</div>
     </div>
-  )
-}
-
-export function FieldError({ message }: { message?: string }) {
-  if (!message) return null
-  return (
-    <p role="alert" className="mt-1 text-[13px] text-[#ff3b30]">
-      {message}
-    </p>
-  )
-}
-
-export const inputClass =
-  'touch-target w-full rounded-2xl border border-black/10 bg-[#f2f2f7] px-4 text-[16px] text-[#1c1c1e] outline-none transition-colors placeholder:text-black/30 focus:border-[#0a84ff] dark:border-white/10 dark:bg-black dark:text-white dark:placeholder:text-white/30'
-
-export function SubmitButton({ pending, label }: { pending: boolean; label: string }) {
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="pressable touch-target mt-5 w-full rounded-2xl bg-[#0a84ff] text-[17px] font-semibold text-white disabled:opacity-50"
-    >
-      {pending ? 'Un momento…' : label}
-    </button>
   )
 }
 
@@ -48,7 +39,7 @@ export function AuthFooter({ to, cta, linkLabel }: { to: string; cta: string; li
   return (
     <>
       {cta}{' '}
-      <Link to={to} className="font-semibold text-[#0a84ff]">
+      <Link to={to} className="focus-ring font-extrabold text-primary dark:text-primary-dark">
         {linkLabel}
       </Link>
     </>

@@ -1,20 +1,22 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
+import { ArrowLeft, Check, TriangleAlert, X } from 'lucide-react'
 import { ApiError } from '../lib/api'
 import { useRegisterInjection } from '../lib/injections'
 import type { CellOut } from '../lib/injections'
 import { formatAppliedAt } from '../lib/history'
-import { MACRO_LABEL, macroSideCells } from './BodyMap'
-import type { MacroCode } from './BodyMap'
+import { MACRO_LABEL, macroSideCells } from '../lib/body'
+import type { MacroCode } from '../lib/body'
 import type { MapResponse } from '../lib/injections'
+import { Button, FieldError } from './ui'
 
 const CELL_STYLE: Record<CellOut['color'], string> = {
-  RED: 'bg-[#ff3b30]/15 text-[#ff3b30] pattern-red',
-  YELLOW: 'bg-[#ffcc00]/20 text-[#8a6d00] pattern-yellow dark:text-[#ffd60a]',
-  GREEN: 'bg-[#34c759]/15 text-[#248a3d] pattern-green dark:text-[#30d158]',
+  RED: 'bg-mz-red-soft text-mz-red pattern-red',
+  YELLOW: 'bg-mz-yellow-soft text-mz-yellow pattern-yellow',
+  GREEN: 'bg-mz-green-soft text-mz-green pattern-green',
 }
 
-const CELL_ICON: Record<CellOut['color'], string> = { RED: '✕', YELLOW: '!', GREEN: '✓' }
+const CELL_ICON: Record<CellOut['color'], typeof Check> = { RED: X, YELLOW: TriangleAlert, GREEN: Check }
 
 export function ZoomGrid({ macro, map, gridSize, initialSide, highlightId, onBack, onSelect }: {
   macro: MacroCode
@@ -36,19 +38,19 @@ export function ZoomGrid({ macro, map, gridSize, initialSide, highlightId, onBac
           type="button"
           onClick={onBack}
           aria-label="Volver al cuerpo"
-          className="pressable touch-target w-11 rounded-2xl bg-black/5 text-[20px] dark:bg-white/10"
+          className="pressable focus-ring touch-target w-11 rounded-2xl bg-primary-soft text-primary-ink dark:bg-white/10 dark:text-primary-dark"
         >
-          ‹
+          <ArrowLeft aria-hidden="true" size={20} className="mx-auto" />
         </button>
         <h2 className="text-[20px]">{MACRO_LABEL[macro]}</h2>
-        <div className="ml-auto grid grid-cols-2 gap-1 rounded-2xl bg-black/5 p-1 dark:bg-white/10" role="group" aria-label="Lado">
+        <div className="ml-auto grid grid-cols-2 gap-1 rounded-2xl bg-primary-soft p-1 dark:bg-white/10" role="group" aria-label="Lado">
           {(['I', 'D'] as const).map((s) => (
             <button
               key={s}
               type="button"
               aria-pressed={side === s}
               onClick={() => setSide(s)}
-              className={`touch-target rounded-xl px-3 text-[14px] font-semibold ${side === s ? 'bg-white shadow dark:bg-[#1c1c1e]' : 'text-black/50 dark:text-white/50'}`}
+              className={`touch-target focus-ring rounded-xl px-3 text-[14px] font-extrabold ${side === s ? 'bg-card shadow dark:bg-card-dark' : 'text-muted dark:text-muted-dark'}`}
             >
               {s === 'I' ? 'Izq.' : 'Der.'}
             </button>
@@ -56,20 +58,23 @@ export function ZoomGrid({ macro, map, gridSize, initialSide, highlightId, onBac
         </div>
       </div>
       <div className={`mt-3 grid gap-2`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} role="group" aria-label={`Cuadrícula ${MACRO_LABEL[macro]} lado ${side}`}>
-        {cells.map((cell) => (
-          <button
-            key={cell.id}
-            type="button"
-            aria-label={`Microzona ${cell.id}, ${cell.color === 'RED' ? 'roja' : cell.color === 'YELLOW' ? 'amarilla' : 'verde'}`}
-            data-microzone={cell.id}
-            onClick={() => onSelect(cell)}
-            className={`touch-target pressable flex aspect-square items-center justify-center rounded-2xl text-[18px] font-bold ${CELL_STYLE[cell.color]} ${highlightId === cell.id ? 'ring-4 ring-[#0a84ff]' : ''}`}
-          >
-            <span aria-hidden="true">{CELL_ICON[cell.color]}</span>
-          </button>
-        ))}
+        {cells.map((cell) => {
+          const Icon = CELL_ICON[cell.color]
+          return (
+            <button
+              key={cell.id}
+              type="button"
+              aria-label={`Microzona ${cell.id}, ${cell.color === 'RED' ? 'roja' : cell.color === 'YELLOW' ? 'amarilla' : 'verde'}`}
+              data-microzone={cell.id}
+              onClick={() => onSelect(cell)}
+              className={`touch-target pressable focus-ring flex aspect-square items-center justify-center rounded-2xl ${CELL_STYLE[cell.color]} ${highlightId === cell.id ? 'ring-4 ring-primary' : ''}`}
+            >
+              <Icon aria-hidden="true" size={20} strokeWidth={3} />
+            </button>
+          )
+        })}
       </div>
-      <p className="mt-2 text-[12px] text-black/40 dark:text-white/40">
+      <p className="mt-2 text-[12px] font-semibold text-muted dark:text-muted-dark">
         Con 6×6 la cuadrícula se compacta para mantener objetivos ≥44px.
       </p>
     </div>
@@ -136,7 +141,7 @@ export function MicrozoneSheet({ cell, gridSize, suggestedId, onClose, onRegiste
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-30 bg-black/30"
+        className="fixed inset-0 z-30 bg-plum/30"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -148,35 +153,35 @@ export function MicrozoneSheet({ cell, gridSize, suggestedId, onClose, onRegiste
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
-        className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg rounded-t-3xl bg-white px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 dark:bg-[#1c1c1e]"
+        className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg rounded-t-[28px] bg-card px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 dark:bg-card-dark"
       >
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-black/15 dark:bg-white/20" aria-hidden="true" />
-        <p className="text-[13px] text-black/50 dark:text-white/50">
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-primary-soft dark:bg-white/20" aria-hidden="true" />
+        <p className="text-[13px] font-semibold text-muted dark:text-muted-dark">
           {macro === 'ABD' ? 'Abdomen' : macro === 'MUS' ? 'Muslo' : macro === 'BRA' ? 'Brazo' : 'Glúteo'} {sideLabel} · F{row} C{col} · {gridSize}×{gridSize}
         </p>
-        <h2 className="font-mono text-[20px] font-bold">{cell.id}</h2>
+        <h2 className="font-mono text-[20px] font-black">{cell.id}</h2>
         <p className="mt-1 text-[15px]">
-          <strong className={cell.color === 'GREEN' ? 'text-[#248a3d] dark:text-[#30d158]' : cell.color === 'YELLOW' ? 'text-[#b26a00]' : 'text-[#ff3b30]'}>
+          <strong className={cell.color === 'GREEN' ? 'text-mz-green' : cell.color === 'YELLOW' ? 'text-mz-yellow' : 'text-mz-red'}>
             {COLOR_WORD[cell.color]} · {pct}% recup.
           </strong>{' '}
-          <span className="text-black/60 dark:text-white/60">
+          <span className="font-semibold text-muted dark:text-muted-dark">
             {cell.hours_remaining <= 0 ? 'Disponible ahora' : `Disponible en ~${Math.round(cell.hours_remaining)} h`}
           </span>
         </p>
-        <p className="text-[14px] text-black/50 dark:text-white/50">
+        <p className="text-[14px] font-semibold text-muted dark:text-muted-dark">
           {last ? `Último uso: ${last.date} ${last.time}` : 'Nunca usada'} · {cell.uses_30d} usos en 30 días
         </p>
 
         {!warn ? (
           <>
             <div className="mt-3">
-              <p className="text-[14px] font-semibold">Hora de aplicación</p>
+              <p className="text-[14px] font-extrabold">Hora de aplicación</p>
               <div className="mt-1 grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   aria-pressed={timeMode === 'now'}
                   onClick={() => setTimeMode('now')}
-                  className={`touch-target rounded-2xl border text-[15px] font-semibold ${timeMode === 'now' ? 'border-[#0a84ff] bg-[#0a84ff]/10 text-[#0a84ff]' : 'border-black/10 dark:border-white/10'}`}
+                  className={`touch-target focus-ring rounded-2xl text-[15px] font-extrabold ${timeMode === 'now' ? 'bg-primary-soft text-primary-ink dark:bg-white/10 dark:text-primary-dark' : 'bg-primary-soft/50 text-muted dark:bg-white/5 dark:text-muted-dark'}`}
                 >
                   Ahora
                 </button>
@@ -188,63 +193,52 @@ export function MicrozoneSheet({ cell, gridSize, suggestedId, onClose, onRegiste
                     setCustomTime(e.target.value)
                     setTimeMode('custom')
                   }}
-                  className="touch-target rounded-2xl border border-black/10 bg-[#f2f2f7] px-3 text-[15px] dark:border-white/10 dark:bg-black"
+                  className="touch-target focus-ring rounded-2xl border border-transparent bg-primary-soft/80 px-3 text-[15px] dark:bg-white/10"
                 />
               </div>
             </div>
-            {error && (
-              <p role="alert" className="mt-2 text-[13px] text-[#ff3b30]">
-                {error}
-              </p>
-            )}
-            <button
-              type="button"
+            <FieldError message={error ?? undefined} />
+            <Button
               disabled={register.isPending}
               onClick={() => (cell.color === 'GREEN' ? submit(false) : setWarn(true))}
-              className="pressable touch-target mt-3 w-full rounded-2xl bg-[#0a84ff] font-semibold text-white disabled:opacity-60"
+              className="mt-3 w-full"
             >
               {register.isPending ? 'Registrando…' : 'Registrar inyección'}
-            </button>
+            </Button>
           </>
         ) : (
           <>
-            <p className="mt-3 rounded-2xl bg-[#ff9f0a]/15 px-4 py-3 text-[14px] text-[#b26a00] dark:text-[#ffd60a]">
-              ⚠ Esta zona aún no se recupera ({COLOR_WORD[cell.color]}). Puedes usarla igual, pero te sugerimos{' '}
-              {suggestedId ?? 'otra microzona'}.
+            <p className="mt-3 flex items-start gap-2 rounded-2xl bg-mz-yellow-soft px-4 py-3 text-[14px] font-bold text-mz-yellow">
+              <TriangleAlert aria-hidden="true" size={18} className="mt-0.5 shrink-0" />
+              <span>
+                Esta zona aún no se recupera ({COLOR_WORD[cell.color]}). Puedes usarla igual, pero te sugerimos{' '}
+                {suggestedId ?? 'otra microzona'}.
+              </span>
             </p>
-            {error && (
-              <p role="alert" className="mt-2 text-[13px] text-[#ff3b30]">
-                {error}
-              </p>
-            )}
+            <FieldError message={error ?? undefined} />
             <div className="mt-3 space-y-2">
               {suggestedId && (
-                <button
-                  type="button"
+                <Button
                   onClick={() => {
                     onClose()
                     onUseSuggested(suggestedId)
                   }}
-                  className="pressable touch-target w-full rounded-2xl bg-[#0a84ff] font-semibold text-white"
+                  className="w-full"
                 >
                   Usar sugerida ({suggestedId})
-                </button>
+                </Button>
               )}
-              <button
-                type="button"
+              <Button
+                variant="soft"
                 disabled={register.isPending}
                 onClick={() => submit(true)}
-                className="pressable touch-target w-full rounded-2xl bg-black/5 font-semibold dark:bg-white/10"
+                className="w-full"
               >
                 {register.isPending ? 'Registrando…' : 'Registrar igual'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setWarn(false)}
-                className="pressable touch-target w-full rounded-2xl font-semibold text-[#0a84ff]"
-              >
+              </Button>
+              <Button variant="ghost" onClick={() => setWarn(false)} className="w-full">
                 Atrás
-              </button>
+              </Button>
             </div>
           </>
         )}

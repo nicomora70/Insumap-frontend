@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAuth } from '../lib/auth'
 import { ApiError } from '../lib/api'
-import { AuthFooter, AuthShell, FieldError, SubmitButton, inputClass } from './AuthShell'
+import { AuthFooter, AuthShell } from './AuthShell'
+import { Button, FieldError, FieldLabel, inputClass } from '../components/ui'
 
 const schema = z.object({
   email: z.string().min(1, 'Escribe tu email.').email('Ese email no parece válido.'),
@@ -45,9 +46,7 @@ export default function Login() {
       footer={<AuthFooter to="/register" cta="¿Aún no tienes cuenta?" linkLabel="Crea una" />}
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <label className="block text-[14px] font-semibold" htmlFor="login-email">
-          Email
-        </label>
+        <FieldLabel htmlFor="login-email">Email</FieldLabel>
         <input
           id="login-email"
           type="email"
@@ -58,9 +57,9 @@ export default function Login() {
         />
         <FieldError message={errors.email?.message} />
 
-        <label className="mt-4 block text-[14px] font-semibold" htmlFor="login-password">
-          Contraseña
-        </label>
+        <div className="mt-4">
+          <FieldLabel htmlFor="login-password">Contraseña</FieldLabel>
+        </div>
         <input
           id="login-password"
           type="password"
@@ -72,7 +71,14 @@ export default function Login() {
         <FieldError message={errors.password?.message} />
         <FieldError message={serverError ?? undefined} />
 
-        <SubmitButton pending={isSubmitting} label="Entrar" />
+        <Button type="submit" disabled={isSubmitting} className="mt-5 w-full">
+          {isSubmitting ? 'Un momento…' : 'Entrar'}
+        </Button>
+        <p className="mt-3 text-center text-[14px]">
+          <Link to="/forgot-password" className="focus-ring font-semibold text-primary dark:text-primary-dark">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </p>
       </form>
     </AuthShell>
   )
