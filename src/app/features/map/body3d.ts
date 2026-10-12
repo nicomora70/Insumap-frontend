@@ -24,12 +24,12 @@ const MODEL_URL = 'models/human-muscles.glb';
 /** Altura normalizada del modelo en unidades de escena. */
 const NORM_HEIGHT = 1.9;
 
-/** Colores del cuerpo oscuro y de las zonas (convertidos de sRGB a lineal). */
+/** Colores del cuerpo claro y de las zonas (convertidos de sRGB a lineal). */
 function srgb(hex: string): [number, number, number] {
   const c = new THREE.Color(hex).convertSRGBToLinear();
   return [c.r, c.g, c.b];
 }
-const DARK_BASE = srgb('#2e2e34');
+const BODY_BASE = srgb('#d3d1cd');
 const ZONE_COLOR: Record<CellColor, [number, number, number]> = {
   RED: srgb('#e03a30'),
   YELLOW: srgb('#f2a02a'),
@@ -225,14 +225,14 @@ export class Body3D implements AfterViewInit, OnDestroy {
     this.controls.minPolarAngle = 0.85;
     this.controls.maxPolarAngle = 2.15;
 
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-    const key = new THREE.DirectionalLight(0xffffff, 2.6);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.95));
+    const key = new THREE.DirectionalLight(0xffffff, 2.0);
     key.position.set(2.5, 4, 3.5);
     this.scene.add(key);
-    const fill = new THREE.DirectionalLight(0xe8dccb, 0.6);
+    const fill = new THREE.DirectionalLight(0xe8dccb, 0.7);
     fill.position.set(-3.5, 2.5, -2.5);
     this.scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.8);
+    const rim = new THREE.DirectionalLight(0xffffff, 0.6);
     rim.position.set(0, 3, -4);
     this.scene.add(rim);
 
@@ -272,9 +272,9 @@ export class Body3D implements AfterViewInit, OnDestroy {
         const count = position.count;
         const colors = new Float32Array(count * 3);
         for (let i = 0; i < count; i++) {
-          colors[i * 3] = DARK_BASE[0];
-          colors[i * 3 + 1] = DARK_BASE[1];
-          colors[i * 3 + 2] = DARK_BASE[2];
+          colors[i * 3] = BODY_BASE[0];
+          colors[i * 3 + 1] = BODY_BASE[1];
+          colors[i * 3 + 2] = BODY_BASE[2];
         }
         const zones = new Uint8Array(count);
         const weights = new Float32Array(count);
@@ -294,8 +294,8 @@ export class Body3D implements AfterViewInit, OnDestroy {
         material.vertexColors = true;
         material.map = null;
         material.color.set('#ffffff');
-        material.roughness = 0.45;
-        material.metalness = 0.18;
+        material.roughness = 0.5;
+        material.metalness = 0.08;
         material.needsUpdate = true;
         this.pickMeshes.push(obj);
       });
@@ -369,7 +369,7 @@ export class Body3D implements AfterViewInit, OnDestroy {
       const color = worstColor(macroCells(map, macro));
       const isSuggested = suggested === macro;
       if (color === 'GREEN' && !isSuggested) {
-        zoneColor[ZONE_INDEX[macro]] = DARK_BASE;
+        zoneColor[ZONE_INDEX[macro]] = BODY_BASE;
       } else if (color === 'GREEN' && isSuggested) {
         zoneColor[ZONE_INDEX[macro]] = SUGGESTED_COLOR;
       } else {
@@ -379,11 +379,11 @@ export class Body3D implements AfterViewInit, OnDestroy {
 
     const array = this.colorAttribute.array as Float32Array;
     for (let i = 0; i < this.vertexZone.length; i++) {
-      const tint = zoneColor[this.vertexZone[i]] ?? DARK_BASE;
+      const tint = zoneColor[this.vertexZone[i]] ?? BODY_BASE;
       const w = this.vertexWeight[i];
-      array[i * 3] = DARK_BASE[0] + (tint[0] - DARK_BASE[0]) * w;
-      array[i * 3 + 1] = DARK_BASE[1] + (tint[1] - DARK_BASE[1]) * w;
-      array[i * 3 + 2] = DARK_BASE[2] + (tint[2] - DARK_BASE[2]) * w;
+      array[i * 3] = BODY_BASE[0] + (tint[0] - BODY_BASE[0]) * w;
+      array[i * 3 + 1] = BODY_BASE[1] + (tint[1] - BODY_BASE[1]) * w;
+      array[i * 3 + 2] = BODY_BASE[2] + (tint[2] - BODY_BASE[2]) * w;
     }
     this.colorAttribute.needsUpdate = true;
   }
