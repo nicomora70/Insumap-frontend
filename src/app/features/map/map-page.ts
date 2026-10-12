@@ -26,7 +26,7 @@ const WORD: Record<CellColor, string> = {
 
 const DOT: Record<CellColor, string> = {
   RED: 'bg-mz-red',
-  YELLOW: 'bg-mz-yellow',
+  YELLOW: 'bg-cyan-500',
   GREEN: 'bg-mz-green',
 };
 

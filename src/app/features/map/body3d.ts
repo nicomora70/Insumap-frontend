@@ -36,7 +36,7 @@ function srgb(hex: string): [number, number, number] {
  */
 const ZONE_WASH: Record<CellColor, { color: [number, number, number]; strength: number }> = {
   RED: { color: srgb('#ff5a45'), strength: 0.74 },
-  YELLOW: { color: srgb('#ffd24a'), strength: 0.78 },
+  YELLOW: { color: srgb('#2fd8ff'), strength: 0.78 },
   GREEN: { color: srgb('#3dcc72'), strength: 0.68 },
 };
 const SUGGESTED_WASH = { color: srgb('#2ee872'), strength: 0.78 };
@@ -116,7 +116,7 @@ const STATUS_SHORT: Record<CellColor, string> = {
 
 const LABEL_CLASS: Record<CellColor, string> = {
   RED: 'text-mz-red',
-  YELLOW: 'text-mz-yellow',
+  YELLOW: 'text-cyan-700',
   GREEN: 'text-mz-green',
 };
 
@@ -359,7 +359,7 @@ export class Body3D implements AfterViewInit, OnDestroy {
     if (xN > 0.115 && yN >= 0.63 && yN <= 0.88) return 'BRA';
     if (yN >= 0.44 && yN <= 0.53 && zN < -0.015) return 'GLU';
     if (yN >= 0.24 && yN <= 0.46 && xN > 0.015) return 'MUS';
-    if (yN >= 0.49 && yN <= 0.63 && zN > -0.04) return 'ABD';
+    if (yN >= 0.49 && yN <= 0.63 && zN > -0.04 && xN < 0.115) return 'ABD';
 
     if (!allowFallback) return null;
 
@@ -397,7 +397,12 @@ export class Body3D implements AfterViewInit, OnDestroy {
       case 'GLU':
         return Math.min(fade(-zN - 0.015, 0.03), fade(yN - 0.44, 0.03), fade(0.53 - yN, 0.03));
       case 'ABD':
-        return Math.min(fade(zN + 0.04, 0.03), fade(yN - 0.49, 0.03), fade(0.63 - yN, 0.03));
+        return Math.min(
+          fade(zN + 0.04, 0.03),
+          fade(yN - 0.49, 0.03),
+          fade(0.63 - yN, 0.03),
+          fade(0.115 - xN, 0.03),
+        );
     }
   }
 
