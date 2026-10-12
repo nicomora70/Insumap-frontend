@@ -24,13 +24,18 @@ const MODEL_URL = 'models/human-muscles.glb';
 /** Altura normalizada del modelo en unidades de escena. */
 const NORM_HEIGHT = 1.9;
 
-/** Multiplicador de color por estado (sobre la textura real del músculo). */
+/** Colores del cuerpo oscuro y de las zonas (convertidos de sRGB a lineal). */
+function srgb(hex: string): [number, number, number] {
+  const c = new THREE.Color(hex).convertSRGBToLinear();
+  return [c.r, c.g, c.b];
+}
+const DARK_BASE = srgb('#2e2e34');
 const ZONE_COLOR: Record<CellColor, [number, number, number]> = {
-  RED: [1.0, 0.4, 0.32],
-  YELLOW: [1.0, 0.78, 0.42],
-  GREEN: [1, 1, 1],
+  RED: srgb('#e03a30'),
+  YELLOW: srgb('#f2a02a'),
+  GREEN: srgb('#2eb861'),
 };
-const SUGGESTED_COLOR: [number, number, number] = [0.55, 1.0, 0.62];
+const SUGGESTED_COLOR: [number, number, number] = srgb('#27d163');
 
 /** Posición de la etiqueta flotante de cada zona (espacio normalizado). */
 const ZONE_BADGE: Record<MacroCode, [number, number, number]> = {
@@ -134,6 +139,7 @@ export class Body3D implements AfterViewInit, OnDestroy {
   private pickMeshes: THREE.Mesh[] = [];
   private colorAttribute?: THREE.BufferAttribute;
   private vertexZone?: Uint8Array;
+  private vertexWeight?: Float32Array;
   private downX = 0;
   private downY = 0;
   private readonly raycaster = new THREE.Raycaster();
@@ -219,14 +225,14 @@ export class Body3D implements AfterViewInit, OnDestroy {
     this.controls.minPolarAngle = 0.85;
     this.controls.maxPolarAngle = 2.15;
 
-    this.scene.add(new THREE.AmbientLight(0xffffff, 1.1));
-    const key = new THREE.DirectionalLight(0xffffff, 2.2);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const key = new THREE.DirectionalLight(0xffffff, 2.6);
     key.position.set(2.5, 4, 3.5);
     this.scene.add(key);
-    const fill = new THREE.DirectionalLight(0xe8dccb, 0.8);
+    const fill = new THREE.DirectionalLight(0xe8dccb, 0.6);
     fill.position.set(-3.5, 2.5, -2.5);
     this.scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.7);
+    const rim = new THREE.DirectionalLight(0xffffff, 0.8);
     rim.position.set(0, 3, -4);
     this.scene.add(rim);
 
@@ -264,22 +270,33 @@ export class Body3D implements AfterViewInit, OnDestroy {
         const geometry = obj.geometry as THREE.BufferGeometry;
         const position = geometry.getAttribute('position') as THREE.BufferAttribute;
         const count = position.count;
-        const colors = new Float32Array(count * 3).fill(1);
+        const colors = new Float32Array(count * 3);
+        for (let i = 0; i < count; i++) {
+          colors[i * 3] = DARK_BASE[0];
+          colors[i * 3 + 1] = DARK_BASE[1];
+          colors[i * 3 + 2] = DARK_BASE[2];
+        }
         const zones = new Uint8Array(count);
+        const weights = new Float32Array(count);
         const v = new THREE.Vector3();
         for (let i = 0; i < count; i++) {
           v.fromBufferAttribute(position, i).applyMatrix4(obj.matrixWorld);
           const zone = this.classifyVertex(v);
           zones[i] = zone ? ZONE_INDEX[zone] : 0;
+          weights[i] = zone ? this.zoneBlend(v, zone) : 0;
         }
         geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
         this.colorAttribute = geometry.getAttribute('color') as THREE.BufferAttribute;
         this.vertexZone = zones;
+        this.vertexWeight = weights;
 
         const material = obj.material as THREE.MeshStandardMaterial;
         material.vertexColors = true;
-        material.roughness = 0.62;
-        material.metalness = 0.02;
+        material.map = null;
+        material.color.set('#ffffff');
+        material.roughness = 0.45;
+        material.metalness = 0.18;
+        material.needsUpdate = true;
         this.pickMeshes.push(obj);
       });
 
@@ -323,9 +340,28 @@ export class Body3D implements AfterViewInit, OnDestroy {
     return bestDist < 0.02 ? best : null;
   }
 
+  /** Factor de mezcla 0..1 dentro de la zona (1 = centro, 0 = borde suave). */
+  private zoneBlend(p: THREE.Vector3, macro: MacroCode): number {
+    const yN = p.y / NORM_HEIGHT;
+    const xN = Math.abs(p.x) / NORM_HEIGHT;
+    const zN = p.z / NORM_HEIGHT;
+    const fade = (value: number, margin: number) =>
+      Math.min(1, Math.max(0, value / margin));
+    switch (macro) {
+      case 'BRA':
+        return Math.min(fade(xN - 0.115, 0.035), fade(yN - 0.63, 0.035), fade(0.88 - yN, 0.035));
+      case 'MUS':
+        return Math.min(fade(xN - 0.015, 0.03), fade(yN - 0.24, 0.04), fade(0.46 - yN, 0.04));
+      case 'GLU':
+        return Math.min(fade(-zN - 0.015, 0.03), fade(yN - 0.44, 0.03), fade(0.53 - yN, 0.03));
+      case 'ABD':
+        return Math.min(fade(zN + 0.04, 0.03), fade(yN - 0.49, 0.03), fade(0.63 - yN, 0.03));
+    }
+  }
+
   /** Colorea cada vértice de zona según el estado (rojo/ámbar/verde sugerida). */
   private applyMap(map: MapResponse): void {
-    if (!this.colorAttribute || !this.vertexZone) return;
+    if (!this.colorAttribute || !this.vertexZone || !this.vertexWeight) return;
     const suggested = this.suggestionMacro();
 
     const zoneColor: (readonly [number, number, number] | null)[] = [null, null, null, null, null];
@@ -333,7 +369,7 @@ export class Body3D implements AfterViewInit, OnDestroy {
       const color = worstColor(macroCells(map, macro));
       const isSuggested = suggested === macro;
       if (color === 'GREEN' && !isSuggested) {
-        zoneColor[ZONE_INDEX[macro]] = [1, 1, 1];
+        zoneColor[ZONE_INDEX[macro]] = DARK_BASE;
       } else if (color === 'GREEN' && isSuggested) {
         zoneColor[ZONE_INDEX[macro]] = SUGGESTED_COLOR;
       } else {
@@ -343,10 +379,11 @@ export class Body3D implements AfterViewInit, OnDestroy {
 
     const array = this.colorAttribute.array as Float32Array;
     for (let i = 0; i < this.vertexZone.length; i++) {
-      const tint = zoneColor[this.vertexZone[i]] ?? [1, 1, 1];
-      array[i * 3] = tint[0];
-      array[i * 3 + 1] = tint[1];
-      array[i * 3 + 2] = tint[2];
+      const tint = zoneColor[this.vertexZone[i]] ?? DARK_BASE;
+      const w = this.vertexWeight[i];
+      array[i * 3] = DARK_BASE[0] + (tint[0] - DARK_BASE[0]) * w;
+      array[i * 3 + 1] = DARK_BASE[1] + (tint[1] - DARK_BASE[1]) * w;
+      array[i * 3 + 2] = DARK_BASE[2] + (tint[2] - DARK_BASE[2]) * w;
     }
     this.colorAttribute.needsUpdate = true;
   }
