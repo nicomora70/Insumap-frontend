@@ -3,7 +3,6 @@ import {
   Component,
   ElementRef,
   OnDestroy,
-  effect,
   input,
   output,
   signal,
@@ -23,19 +22,6 @@ const MODEL_URL = 'models/human-muscles.glb';
 
 /** Altura normalizada del modelo en unidades de escena. */
 const NORM_HEIGHT = 1.9;
-
-/** Colores del cuerpo claro y de las zonas (convertidos de sRGB a lineal). */
-function srgb(hex: string): [number, number, number] {
-  const c = new THREE.Color(hex).convertSRGBToLinear();
-  return [c.r, c.g, c.b];
-}
-const BODY_BASE = srgb('#eeeeec');
-const ZONE_COLOR: Record<CellColor, [number, number, number]> = {
-  RED: srgb('#e03a30'),
-  YELLOW: srgb('#f2a02a'),
-  GREEN: srgb('#2eb861'),
-};
-const SUGGESTED_COLOR: [number, number, number] = srgb('#27d163');
 
 /** Posición de la etiqueta flotante de cada zona (espacio normalizado). */
 const ZONE_BADGE: Record<MacroCode, [number, number, number]> = {
@@ -65,12 +51,9 @@ const LABEL_CLASS: Record<CellColor, string> = {
   GREEN: 'text-mz-green',
 };
 
-const ZONE_INDEX: Record<MacroCode, number> = { ABD: 1, BRA: 2, MUS: 3, GLU: 4 };
-const INDEX_ZONE: (MacroCode | null)[] = [null, 'ABD', 'BRA', 'MUS', 'GLU'];
-
 /**
- * Modelo anatómico 3D real (malla CC0 de Grab3D) con las zonas de inyección
- * coloreadas por vértices según la recuperación (rojo/ámbar/verde).
+ * Modelo anatómico 3D real (malla CC0 de Grab3D) en su aspecto original;
+ * las zonas se detectan al tocar para abrir su cuadrícula.
  */
 @Component({
   selector: 'app-body3d',
@@ -137,21 +120,10 @@ export class Body3D implements AfterViewInit, OnDestroy {
   private raf = 0;
   private bodyGroup = new THREE.Group();
   private pickMeshes: THREE.Mesh[] = [];
-  private colorAttribute?: THREE.BufferAttribute;
-  private vertexZone?: Uint8Array;
-  private vertexWeight?: Float32Array;
   private downX = 0;
   private downY = 0;
   private readonly raycaster = new THREE.Raycaster();
   private readonly ndc = new THREE.Vector2();
-
-  constructor() {
-    effect(() => {
-      const map = this.map();
-      this.suggestionMacro();
-      if (map && this.colorAttribute) this.applyMap(map);
-    });
-  }
 
   ngAfterViewInit(): void {
     this.initScene();
@@ -264,44 +236,11 @@ export class Body3D implements AfterViewInit, OnDestroy {
       this.scene!.add(this.bodyGroup);
       this.bodyGroup.updateMatrixWorld(true);
 
-      // Preparar colores por vértice para colorear zonas musculares.
+      // Registrar la malla para el raycast (las zonas se detectan por posición).
       root.traverse((obj) => {
-        if (!(obj instanceof THREE.Mesh)) return;
-        const geometry = obj.geometry as THREE.BufferGeometry;
-        const position = geometry.getAttribute('position') as THREE.BufferAttribute;
-        const count = position.count;
-        const colors = new Float32Array(count * 3);
-        for (let i = 0; i < count; i++) {
-          colors[i * 3] = BODY_BASE[0];
-          colors[i * 3 + 1] = BODY_BASE[1];
-          colors[i * 3 + 2] = BODY_BASE[2];
-        }
-        const zones = new Uint8Array(count);
-        const weights = new Float32Array(count);
-        const v = new THREE.Vector3();
-        for (let i = 0; i < count; i++) {
-          v.fromBufferAttribute(position, i).applyMatrix4(obj.matrixWorld);
-          const zone = this.classifyVertex(v);
-          zones[i] = zone ? ZONE_INDEX[zone] : 0;
-          weights[i] = zone ? this.zoneBlend(v, zone) : 0;
-        }
-        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-        this.colorAttribute = geometry.getAttribute('color') as THREE.BufferAttribute;
-        this.vertexZone = zones;
-        this.vertexWeight = weights;
-
-        const material = obj.material as THREE.MeshStandardMaterial;
-        material.vertexColors = true;
-        material.map = null;
-        material.color.set('#ffffff');
-        material.roughness = 0.5;
-        material.metalness = 0.08;
-        material.needsUpdate = true;
-        this.pickMeshes.push(obj);
+        if (obj instanceof THREE.Mesh) this.pickMeshes.push(obj);
       });
 
-      const map = this.map();
-      if (map) this.applyMap(map);
       this.ready.set(true);
     } catch (err) {
       console.error('No se pudo cargar el modelo 3D', err);
@@ -338,54 +277,6 @@ export class Body3D implements AfterViewInit, OnDestroy {
       }
     }
     return bestDist < 0.02 ? best : null;
-  }
-
-  /** Factor de mezcla 0..1 dentro de la zona (1 = centro, 0 = borde suave). */
-  private zoneBlend(p: THREE.Vector3, macro: MacroCode): number {
-    const yN = p.y / NORM_HEIGHT;
-    const xN = Math.abs(p.x) / NORM_HEIGHT;
-    const zN = p.z / NORM_HEIGHT;
-    const fade = (value: number, margin: number) =>
-      Math.min(1, Math.max(0, value / margin));
-    switch (macro) {
-      case 'BRA':
-        return Math.min(fade(xN - 0.115, 0.035), fade(yN - 0.63, 0.035), fade(0.88 - yN, 0.035));
-      case 'MUS':
-        return Math.min(fade(xN - 0.015, 0.03), fade(yN - 0.24, 0.04), fade(0.46 - yN, 0.04));
-      case 'GLU':
-        return Math.min(fade(-zN - 0.015, 0.03), fade(yN - 0.44, 0.03), fade(0.53 - yN, 0.03));
-      case 'ABD':
-        return Math.min(fade(zN + 0.04, 0.03), fade(yN - 0.49, 0.03), fade(0.63 - yN, 0.03));
-    }
-  }
-
-  /** Colorea cada vértice de zona según el estado (rojo/ámbar/verde sugerida). */
-  private applyMap(map: MapResponse): void {
-    if (!this.colorAttribute || !this.vertexZone || !this.vertexWeight) return;
-    const suggested = this.suggestionMacro();
-
-    const zoneColor: (readonly [number, number, number] | null)[] = [null, null, null, null, null];
-    for (const macro of MACROS) {
-      const color = worstColor(macroCells(map, macro));
-      const isSuggested = suggested === macro;
-      if (color === 'GREEN' && !isSuggested) {
-        zoneColor[ZONE_INDEX[macro]] = BODY_BASE;
-      } else if (color === 'GREEN' && isSuggested) {
-        zoneColor[ZONE_INDEX[macro]] = SUGGESTED_COLOR;
-      } else {
-        zoneColor[ZONE_INDEX[macro]] = ZONE_COLOR[color];
-      }
-    }
-
-    const array = this.colorAttribute.array as Float32Array;
-    for (let i = 0; i < this.vertexZone.length; i++) {
-      const tint = zoneColor[this.vertexZone[i]] ?? BODY_BASE;
-      const w = this.vertexWeight[i];
-      array[i * 3] = BODY_BASE[0] + (tint[0] - BODY_BASE[0]) * w;
-      array[i * 3 + 1] = BODY_BASE[1] + (tint[1] - BODY_BASE[1]) * w;
-      array[i * 3 + 2] = BODY_BASE[2] + (tint[2] - BODY_BASE[2]) * w;
-    }
-    this.colorAttribute.needsUpdate = true;
   }
 
   private onResize = (): void => {
