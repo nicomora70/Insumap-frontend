@@ -35,11 +35,11 @@ function srgb(hex: string): [number, number, number] {
  * de la zona (0 = modelo intacto, 1 = color plano); el borde se funde a 0.
  */
 const ZONE_WASH: Record<CellColor, { color: [number, number, number]; strength: number }> = {
-  RED: { color: srgb('#d64545'), strength: 0.66 },
-  YELLOW: { color: srgb('#f0c14a'), strength: 0.7 },
-  GREEN: { color: srgb('#5eae78'), strength: 0.58 },
+  RED: { color: srgb('#ff5a45'), strength: 0.74 },
+  YELLOW: { color: srgb('#ffd24a'), strength: 0.78 },
+  GREEN: { color: srgb('#3dcc72'), strength: 0.68 },
 };
-const SUGGESTED_WASH = { color: srgb('#2fbf64'), strength: 0.68 };
+const SUGGESTED_WASH = { color: srgb('#2ee872'), strength: 0.78 };
 
 interface ZonePaint {
   tint: THREE.BufferAttribute;
@@ -51,7 +51,7 @@ interface ZonePaint {
 /** Mezcla el color de zona en el shader sin reemplazar la textura del músculo. */
 function patchZoneWash(material: THREE.Material): void {
   const std = material as THREE.MeshStandardMaterial;
-  std.customProgramCacheKey = () => 'insumap-zone-wash';
+  std.customProgramCacheKey = () => 'insumap-zone-wash-2';
   std.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader
       .replace(
@@ -81,8 +81,8 @@ varying float vZoneWeight;`,
 {
   float w = clamp(vZoneWeight, 0.0, 1.0);
   float origL = dot(diffuseColor.rgb, vec3(0.30, 0.59, 0.11));
-  float shade = clamp(origL / 0.22, 0.62, 1.32);
-  vec3 washed = vZoneTint * mix(1.0, shade, 0.85);
+  float shade = clamp(origL / 0.22, 0.74, 1.4);
+  vec3 washed = vZoneTint * mix(1.0, shade, 0.62);
   diffuseColor.rgb = mix(diffuseColor.rgb, washed, w);
 }`,
       );
