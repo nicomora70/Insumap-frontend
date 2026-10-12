@@ -12,31 +12,40 @@ import {
 } from '@angular/core';
 import { LucideCheck, LucideStar, LucideTriangleAlert, LucideX } from '@lucide/angular';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type { CellColor, MapResponse } from '../../core/data/types';
 import { MACROS, macroCells, worstColor } from '../../core/util/body';
 import type { MacroCode } from '../../core/util/body';
 
-/* Materiales del modelo anatómico */
-const SKIN = '#cfcfcf';
-const SKIN_ROUGH = 0.48;
-const SHORTS = '#2b2b2b';
-const HAIR = '#3a3a3a';
+/** Modelo anatómico real (CC0, Grab3D) servido desde /models. */
+const MODEL_URL = 'models/human-muscles.glb';
 
-/** Tinte de músculo por estado: verde sano = cuerpo neutro. */
-const MUSCLE_TINT: Record<CellColor, string> = {
-  RED: '#c9583f',
-  YELLOW: '#dfa63e',
-  GREEN: SKIN,
+/** Altura normalizada del modelo en unidades de escena. */
+const NORM_HEIGHT = 1.9;
+
+/** Multiplicador de color por estado (sobre la textura real del músculo). */
+const ZONE_COLOR: Record<CellColor, [number, number, number]> = {
+  RED: [1.0, 0.4, 0.32],
+  YELLOW: [1.0, 0.78, 0.42],
+  GREEN: [1, 1, 1],
+};
+const SUGGESTED_COLOR: [number, number, number] = [0.55, 1.0, 0.62];
+
+/** Posición de la etiqueta flotante de cada zona (espacio normalizado). */
+const ZONE_BADGE: Record<MacroCode, [number, number, number]> = {
+  ABD: [0.38, 1.16, 0.14],
+  MUS: [0.38, 0.72, 0.1],
+  BRA: [0.54, 1.38, 0],
+  GLU: [-0.38, 0.98, -0.2],
 };
 
-/** Posición de la etiqueta flotante de cada zona. */
-const ZONE_BADGE: Record<MacroCode, [number, number, number]> = {
-  ABD: [0.3, 1.32, 0.12],
-  MUS: [0.28, 0.78, 0.1],
-  BRA: [0.42, 1.45, 0],
-  GLU: [-0.28, 1.0, -0.22],
+/** Anclas de región (normalizadas a altura 1) para el clasificador. */
+const REGION_ANCHOR: Record<MacroCode, [number, number, number]> = {
+  ABD: [0, 0.56, 0.1],
+  BRA: [0.16, 0.74, 0],
+  MUS: [0.08, 0.35, 0.05],
+  GLU: [0, 0.48, -0.12],
 };
 
 const STATUS_SHORT: Record<CellColor, string> = {
@@ -51,9 +60,12 @@ const LABEL_CLASS: Record<CellColor, string> = {
   GREEN: 'text-mz-green',
 };
 
+const ZONE_INDEX: Record<MacroCode, number> = { ABD: 1, BRA: 2, MUS: 3, GLU: 4 };
+const INDEX_ZONE: (MacroCode | null)[] = [null, 'ABD', 'BRA', 'MUS', 'GLU'];
+
 /**
- * Modelo anatómico 3D masculino (proporciones reales, grupos musculares
- * esculpidos por primitivas) con zonas resaltables por recuperación.
+ * Modelo anatómico 3D real (malla CC0 de Grab3D) con las zonas de inyección
+ * coloreadas por vértices según la recuperación (rojo/ámbar/verde).
  */
 @Component({
   selector: 'app-body3d',
@@ -65,7 +77,9 @@ const LABEL_CLASS: Record<CellColor, string> = {
     >
       @if (!ready()) {
         <div class="absolute inset-0 flex items-center justify-center">
-          <p class="animate-pulse text-[14px] font-medium text-muted">Cargando cuerpo…</p>
+          <p class="animate-pulse text-[14px] font-medium text-muted">
+            {{ failed() ? 'No se pudo cargar el modelo 3D.' : 'Cargando modelo anatómico…' }}
+          </p>
         </div>
       }
       <div
@@ -108,6 +122,7 @@ export class Body3D implements AfterViewInit, OnDestroy {
   private readonly labelRefs = viewChildren<ElementRef<HTMLElement>>('lbl');
 
   protected readonly ready = signal(false);
+  protected readonly failed = signal(false);
   protected readonly macros = MACROS;
 
   private renderer?: THREE.WebGLRenderer;
@@ -115,8 +130,10 @@ export class Body3D implements AfterViewInit, OnDestroy {
   private camera?: THREE.PerspectiveCamera;
   private controls?: OrbitControls;
   private raf = 0;
-  private zoneMeshes: THREE.Mesh[] = [];
-  private zoneMaterials: Partial<Record<MacroCode, THREE.MeshStandardMaterial[]>> = {};
+  private bodyGroup = new THREE.Group();
+  private pickMeshes: THREE.Mesh[] = [];
+  private colorAttribute?: THREE.BufferAttribute;
+  private vertexZone?: Uint8Array;
   private downX = 0;
   private downY = 0;
   private readonly raycaster = new THREE.Raycaster();
@@ -126,14 +143,13 @@ export class Body3D implements AfterViewInit, OnDestroy {
     effect(() => {
       const map = this.map();
       this.suggestionMacro();
-      if (map && this.renderer) this.applyMap(map);
+      if (map && this.colorAttribute) this.applyMap(map);
     });
   }
 
   ngAfterViewInit(): void {
     this.initScene();
-    const map = this.map();
-    if (map) this.applyMap(map);
+    void this.loadBody();
     this.animate();
   }
 
@@ -186,38 +202,33 @@ export class Body3D implements AfterViewInit, OnDestroy {
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
-      30,
+      32,
       parent.clientWidth / Math.max(parent.clientHeight, 1),
-      0.1,
+      0.05,
       100,
     );
-    this.camera.position.set(0, 1.25, 4.1);
+    this.camera.position.set(0, 1.05, 3.3);
 
     this.controls = new OrbitControls(this.camera, canvas);
-    this.controls.target.set(0, 1.1, 0);
+    this.controls.target.set(0, 0.95, 0);
     this.controls.enablePan = false;
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
-    this.controls.minDistance = 2.2;
-    this.controls.maxDistance = 6.5;
+    this.controls.minDistance = 1.8;
+    this.controls.maxDistance = 5.5;
     this.controls.minPolarAngle = 0.85;
     this.controls.maxPolarAngle = 2.15;
 
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const key = new THREE.DirectionalLight(0xffffff, 1.6);
-    key.position.set(3.5, 6, 4.5);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+    const key = new THREE.DirectionalLight(0xffffff, 2.2);
+    key.position.set(2.5, 4, 3.5);
     this.scene.add(key);
-    const fill = new THREE.DirectionalLight(0xe8dccb, 0.5);
-    fill.position.set(-5, 3.5, -3);
+    const fill = new THREE.DirectionalLight(0xe8dccb, 0.8);
+    fill.position.set(-3.5, 2.5, -2.5);
     this.scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.4);
-    rim.position.set(0, 4, -6);
+    const rim = new THREE.DirectionalLight(0xffffff, 0.7);
+    rim.position.set(0, 3, -4);
     this.scene.add(rim);
-
-    this.buildBody();
-
-    this.renderer.render(this.scene, this.camera);
-    this.ready.set(true);
 
     window.addEventListener('resize', this.onResize);
     canvas.addEventListener('pointerdown', this.onPointerDown);
@@ -225,196 +236,119 @@ export class Body3D implements AfterViewInit, OnDestroy {
     canvas.addEventListener('pointermove', this.onPointerMove);
   }
 
-  private skinMaterial(): THREE.MeshStandardMaterial {
-    return new THREE.MeshStandardMaterial({
-      color: new THREE.Color(SKIN),
-      roughness: SKIN_ROUGH,
-      metalness: 0.06,
-    });
-  }
+  private async loadBody(): Promise<void> {
+    try {
+      const gltf = await new GLTFLoader().loadAsync(MODEL_URL);
+      const root = gltf.scene;
 
-  private plainMaterial(color: string, roughness: number): THREE.MeshStandardMaterial {
-    return new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness });
-  }
-
-  private buildBody(): void {
-    const scene = this.scene!;
-    const group = new THREE.Group();
-    scene.add(group);
-
-    const add = (mesh: THREE.Mesh, parent: THREE.Object3D = group): THREE.Mesh => {
-      parent.add(mesh);
-      return mesh;
-    };
-    /** Elipsoide suave (esfera unitaria escalada). */
-    const blob = (
-      rx: number,
-      ry: number,
-      rz: number,
-      x: number,
-      y: number,
-      z: number,
-      material?: THREE.Material,
-    ): THREE.Mesh => {
-      const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), material ?? this.skinMaterial());
-      mesh.scale.set(rx, ry, rz);
-      mesh.position.set(x, y, z);
-      return add(mesh);
-    };
-    const limb = (
-      rTop: number,
-      rBottom: number,
-      height: number,
-      x: number,
-      y: number,
-      material?: THREE.Material,
-    ): THREE.Mesh => {
-      const mesh = new THREE.Mesh(
-        new THREE.CylinderGeometry(rTop, rBottom, height, 28),
-        material ?? this.skinMaterial(),
+      // Normalizar: altura fija, pies en y=0, centrado en x/z.
+      const box = new THREE.Box3().setFromObject(root);
+      const size = box.getSize(new THREE.Vector3());
+      const scale = NORM_HEIGHT / Math.max(size.y, 0.001);
+      root.scale.setScalar(scale);
+      root.updateMatrixWorld(true);
+      const box2 = new THREE.Box3().setFromObject(root);
+      root.position.set(
+        -(box2.min.x + box2.max.x) / 2,
+        -box2.min.y,
+        -(box2.min.z + box2.max.z) / 2,
       );
-      mesh.position.set(x, y, 0);
-      return add(mesh);
-    };
-    const box = (
-      w: number,
-      h: number,
-      d: number,
-      x: number,
-      y: number,
-      z: number,
-      radius: number,
-      material?: THREE.Material,
-    ): THREE.Mesh => {
-      const mesh = new THREE.Mesh(
-        new RoundedBoxGeometry(w, h, d, 4, radius),
-        material ?? this.skinMaterial(),
-      );
-      mesh.position.set(x, y, z);
-      return add(mesh);
-    };
 
-    /* ================= Piernas ================= */
-    // Pies (con empeine)
-    for (const x of [-0.09, 0.09]) {
-      box(0.11, 0.055, 0.24, x, 0.028, 0.04, 0.022);
-      box(0.1, 0.045, 0.09, x, 0.033, 0.17, 0.02);
-    }
-    // Tobillos
-    for (const x of [-0.09, 0.09]) limb(0.045, 0.042, 0.12, x, 0.12);
-    // Gemelos (dos cabezas, como la lámina)
-    for (const x of [-0.09, 0.09]) {
-      limb(0.052, 0.062, 0.3, x, 0.34);
-      blob(0.045, 0.1, 0.05, x - 0.015, 0.37, -0.03);
-      blob(0.045, 0.1, 0.05, x + 0.015, 0.37, -0.03);
-    }
-    // Rodillas
-    for (const x of [-0.09, 0.09]) blob(0.068, 0.058, 0.07, x, 0.55, 0.005);
-    // Muslos (zona MUS) + cuádriceps
-    const mus: THREE.Mesh[] = [];
-    for (const x of [-0.1, 0.1]) {
-      const thigh = limb(0.095, 0.072, 0.42, x, 0.76);
-      const quad = blob(0.07, 0.15, 0.05, x, 0.79, 0.04);
-      mus.push(thigh, quad);
-    }
-    this.registerZone('MUS', ...mus);
+      this.bodyGroup.add(root);
+      this.scene!.add(this.bodyGroup);
+      this.bodyGroup.updateMatrixWorld(true);
 
-    /* ================= Shorts ================= */
-    for (const x of [-0.1, 0.1]) {
-      limb(0.112, 0.105, 0.16, x, 0.98, this.plainMaterial(SHORTS, 0.85));
+      // Preparar colores por vértice para colorear zonas musculares.
+      root.traverse((obj) => {
+        if (!(obj instanceof THREE.Mesh)) return;
+        const geometry = obj.geometry as THREE.BufferGeometry;
+        const position = geometry.getAttribute('position') as THREE.BufferAttribute;
+        const count = position.count;
+        const colors = new Float32Array(count * 3).fill(1);
+        const zones = new Uint8Array(count);
+        const v = new THREE.Vector3();
+        for (let i = 0; i < count; i++) {
+          v.fromBufferAttribute(position, i).applyMatrix4(obj.matrixWorld);
+          const zone = this.classifyVertex(v);
+          zones[i] = zone ? ZONE_INDEX[zone] : 0;
+        }
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        this.colorAttribute = geometry.getAttribute('color') as THREE.BufferAttribute;
+        this.vertexZone = zones;
+
+        const material = obj.material as THREE.MeshStandardMaterial;
+        material.vertexColors = true;
+        material.roughness = 0.62;
+        material.metalness = 0.02;
+        this.pickMeshes.push(obj);
+      });
+
+      const map = this.map();
+      if (map) this.applyMap(map);
+      this.ready.set(true);
+    } catch (err) {
+      console.error('No se pudo cargar el modelo 3D', err);
+      this.failed.set(true);
     }
-    box(0.34, 0.24, 0.24, 0, 1.06, 0, 0.09, this.plainMaterial(SHORTS, 0.85));
-
-    // Glúteos (zona GLU) — sobresalen detrás del shorts
-    const gluA = blob(0.095, 0.1, 0.095, -0.085, 1.04, -0.125);
-    const gluB = blob(0.095, 0.1, 0.095, 0.085, 1.04, -0.125);
-    this.registerZone('GLU', gluA, gluB);
-
-    /* ================= Torso ================= */
-    // Cintura + oblicuos + abdominales (zona ABD)
-    const abd: THREE.Mesh[] = [];
-    abd.push(box(0.3, 0.26, 0.2, 0, 1.3, 0, 0.09));
-    abd.push(blob(0.045, 0.1, 0.06, -0.13, 1.28, 0.045));
-    abd.push(blob(0.045, 0.1, 0.06, 0.13, 1.28, 0.045));
-    for (const y of [1.38, 1.31, 1.24]) {
-      abd.push(box(0.07, 0.052, 0.03, -0.042, y, 0.105, 0.014));
-      abd.push(box(0.07, 0.052, 0.03, 0.042, y, 0.105, 0.014));
-    }
-    this.registerZone('ABD', ...abd);
-
-    // Pecho + pectorales
-    box(0.42, 0.24, 0.24, 0, 1.52, 0, 0.1);
-    for (const x of [-0.1, 0.1]) box(0.16, 0.11, 0.05, x, 1.54, 0.115, 0.03);
-    // Dorsales (laterales del torso)
-    for (const x of [-0.17, 0.17]) blob(0.05, 0.14, 0.11, x, 1.42, -0.02);
-    // Trapecios
-    for (const x of [-0.09, 0.09]) blob(0.08, 0.045, 0.06, x, 1.67, -0.035);
-
-    /* ================= Brazos ================= */
-    // Deltoides
-    for (const x of [-0.24, 0.24]) blob(0.085, 0.09, 0.085, x, 1.62, 0);
-    // Brazo superior (zona BRA) + bíceps/tríceps
-    const bra: THREE.Mesh[] = [];
-    for (const x of [-0.25, 0.25]) {
-      const upper = limb(0.052, 0.048, 0.24, x, 1.45);
-      const biceps = blob(0.045, 0.085, 0.05, x, 1.46, 0.035);
-      const triceps = blob(0.04, 0.08, 0.045, x, 1.45, -0.035);
-      bra.push(upper, biceps, triceps);
-    }
-    this.registerZone('BRA', ...bra);
-    // Codos
-    for (const x of [-0.25, 0.25]) blob(0.05, 0.05, 0.05, x, 1.31, 0);
-    // Antebrazos
-    for (const x of [-0.255, 0.255]) limb(0.05, 0.038, 0.26, x, 1.17);
-    // Manos (con pulgar)
-    for (const x of [-0.26, 0.26]) {
-      box(0.065, 0.11, 0.04, x, 1.02, 0.005, 0.018);
-      blob(0.02, 0.04, 0.025, x - 0.035 * Math.sign(x), 1.05, 0.02);
-    }
-
-    /* ================= Cabeza ================= */
-    // Cuello
-    limb(0.052, 0.062, 0.13, 0, 1.72);
-    // Cráneo + mandíbula + nariz
-    blob(0.105, 0.125, 0.115, 0, 1.88, 0);
-    blob(0.085, 0.06, 0.09, 0, 1.805, 0.015);
-    blob(0.018, 0.026, 0.022, 0, 1.865, 0.108);
-    // Orejas
-    for (const x of [-0.1, 0.1]) blob(0.014, 0.032, 0.022, x, 1.87, 0.005);
-    // Cabello (deja ver la frente)
-    blob(0.108, 0.082, 0.105, 0, 1.94, -0.035, this.plainMaterial(HAIR, 0.7));
-    blob(0.085, 0.08, 0.055, 0, 1.9, -0.085, this.plainMaterial(HAIR, 0.7));
   }
 
-  private registerZone(macro: MacroCode, ...meshes: THREE.Mesh[]): void {
-    const materials: THREE.MeshStandardMaterial[] = [];
-    for (const mesh of meshes) {
-      mesh.userData['macro'] = macro;
-      materials.push(mesh.material as THREE.MeshStandardMaterial);
-      this.zoneMeshes.push(mesh);
+  /** Región de una zona a partir de la posición normalizada (altura 1). */
+  private classifyVertex(p: THREE.Vector3, allowFallback = false): MacroCode | null {
+    const yN = p.y / NORM_HEIGHT;
+    const xN = Math.abs(p.x) / NORM_HEIGHT;
+    const zN = p.z / NORM_HEIGHT;
+
+    // Proporciones medidas sobre el modelo real (hombro 0.86H, codo 0.65H, cadera 0.44H, rodilla 0.25H).
+    if (xN > 0.115 && yN >= 0.63 && yN <= 0.88) return 'BRA';
+    if (yN >= 0.44 && yN <= 0.53 && zN < -0.015) return 'GLU';
+    if (yN >= 0.24 && yN <= 0.46 && xN > 0.015) return 'MUS';
+    if (yN >= 0.49 && yN <= 0.63 && zN > -0.04) return 'ABD';
+
+    if (!allowFallback) return null;
+
+    // Respaldo para el clic: región más cercana por ancla.
+    let best: MacroCode | null = null;
+    let bestDist = Infinity;
+    for (const macro of MACROS) {
+      const [ax, ay, az] = REGION_ANCHOR[macro];
+      const dx = p.x / NORM_HEIGHT - ax;
+      const dy = yN - ay;
+      const dz = zN - az;
+      const dist = dx * dx + dy * dy + dz * dz;
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = macro;
+      }
     }
-    this.zoneMaterials[macro] = materials;
+    return bestDist < 0.02 ? best : null;
   }
 
-  /** Verde sano = cuerpo neutro; la sugerida se resalta aunque esté sana. */
+  /** Colorea cada vértice de zona según el estado (rojo/ámbar/verde sugerida). */
   private applyMap(map: MapResponse): void {
+    if (!this.colorAttribute || !this.vertexZone) return;
     const suggested = this.suggestionMacro();
+
+    const zoneColor: (readonly [number, number, number] | null)[] = [null, null, null, null, null];
     for (const macro of MACROS) {
       const color = worstColor(macroCells(map, macro));
       const isSuggested = suggested === macro;
-      const tintHex = color === 'GREEN' ? (isSuggested ? '#9db894' : SKIN) : MUSCLE_TINT[color];
-      const tint = new THREE.Color(tintHex);
-      for (const material of this.zoneMaterials[macro] ?? []) {
-        material.color.copy(tint);
-        if (isSuggested) {
-          material.emissive.copy(tint);
-          material.emissiveIntensity = 0.32;
-        } else {
-          material.emissive.setRGB(0, 0, 0);
-          material.emissiveIntensity = 0;
-        }
+      if (color === 'GREEN' && !isSuggested) {
+        zoneColor[ZONE_INDEX[macro]] = [1, 1, 1];
+      } else if (color === 'GREEN' && isSuggested) {
+        zoneColor[ZONE_INDEX[macro]] = SUGGESTED_COLOR;
+      } else {
+        zoneColor[ZONE_INDEX[macro]] = ZONE_COLOR[color];
       }
     }
+
+    const array = this.colorAttribute.array as Float32Array;
+    for (let i = 0; i < this.vertexZone.length; i++) {
+      const tint = zoneColor[this.vertexZone[i]] ?? [1, 1, 1];
+      array[i * 3] = tint[0];
+      array[i * 3 + 1] = tint[1];
+      array[i * 3 + 2] = tint[2];
+    }
+    this.colorAttribute.needsUpdate = true;
   }
 
   private onResize = (): void => {
@@ -444,6 +378,7 @@ export class Body3D implements AfterViewInit, OnDestroy {
   };
 
   private pick(clientX: number, clientY: number): MacroCode | null {
+    if (this.pickMeshes.length === 0) return null;
     const canvas = this.canvasRef().nativeElement;
     const rect = canvas.getBoundingClientRect();
     this.ndc.set(
@@ -451,9 +386,11 @@ export class Body3D implements AfterViewInit, OnDestroy {
       -((clientY - rect.top) / rect.height) * 2 + 1,
     );
     this.raycaster.setFromCamera(this.ndc, this.camera!);
-    const hits = this.raycaster.intersectObjects(this.zoneMeshes, false);
-    const macro = hits[0]?.object.userData['macro'] as MacroCode | undefined;
-    return macro ?? null;
+    const hits = this.raycaster.intersectObjects(this.pickMeshes, false);
+    const point = hits[0]?.point;
+    if (!point) return null;
+    const local = this.bodyGroup.worldToLocal(point.clone());
+    return this.classifyVertex(local, true);
   }
 
   private animate = (): void => {
