@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { LucideChevronRight } from '@lucide/angular';
+import { LucideChevronRight, LucideStar } from '@lucide/angular';
 import { AuthService } from '../../core/auth/auth.service';
 import { MapStore } from '../../core/data/map.store';
 import { ToastService } from '../../core/data/toast.service';
@@ -30,6 +30,14 @@ const DOT: Record<CellColor, string> = {
   GREEN: 'bg-mz-green',
 };
 
+/** Leyenda de los colores del cuerpo 3D (mismos tonos del velo de cada zona). */
+const LEGEND: { label: string; dot: string; star: boolean }[] = [
+  { label: 'Sugerida', dot: 'bg-[#2ee872]', star: true },
+  { label: 'Lista', dot: 'bg-[#3dcc72]', star: false },
+  { label: 'Casi lista', dot: 'bg-[#2fd8ff]', star: false },
+  { label: 'Recuperando', dot: 'bg-[#ff5a45]', star: false },
+];
+
 type MapView = 'body' | 'list';
 
 interface ZoomState {
@@ -41,7 +49,7 @@ interface ZoomState {
 /** P04: inicio del paciente con la composición editorial de la referencia. */
 @Component({
   selector: 'app-map-page',
-  imports: [AppShell, UiBtn, Body3D, ZoomGrid, MacroGrid, MicrozoneSheet, LucideChevronRight],
+  imports: [AppShell, UiBtn, Body3D, ZoomGrid, MacroGrid, MicrozoneSheet, LucideChevronRight, LucideStar],
   template: `
     <app-shell [userName]="userName()" [tabs]="tabs" active="mapa">
       <main class="page-enter">
@@ -170,6 +178,29 @@ interface ZoomState {
                     (selectMacro)="openMacro($event)"
                   />
                 </div>
+                <div
+                  class="mt-3 flex flex-wrap items-center gap-2"
+                  aria-label="Leyenda de colores del mapa"
+                >
+                  @for (item of legend; track item.label) {
+                    <span
+                      class="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-2.5 py-1 text-[12px] font-medium text-muted"
+                    >
+                      @if (item.star) {
+                        <svg
+                          lucideStar
+                          [size]="12"
+                          [strokeWidth]="2.4"
+                          aria-hidden="true"
+                          class="text-olive"
+                        ></svg>
+                      } @else {
+                        <span class="h-2 w-2 rounded-full" [class]="item.dot"></span>
+                      }
+                      {{ item.label }}
+                    </span>
+                  }
+                </div>
               } @else {
                 <div class="mt-4 space-y-3">
                   @for (zone of map.zones; track zone.macro) {
@@ -211,6 +242,7 @@ export class MapPage {
 
   protected readonly tabs = PATIENT_TABS;
   protected readonly macros = MACROS;
+  protected readonly legend = LEGEND;
   protected readonly tabCard = TAB_CARD;
   protected readonly userName = computed(() => this.auth.user()?.name ?? 'Insumap');
   protected readonly topSuggestion = this.mapStore.topSuggestion;
