@@ -20,18 +20,16 @@ import { UiBtn } from '../../shared/ui/button';
       active="perfil"
       profileRoute="/cuenta"
     >
-      <main class="page-enter space-y-3 px-4 pt-3 lg:px-8">
-        <section class="card flex items-center gap-4 p-4 sm:p-5" aria-label="Tu cuenta">
+      <main class="page-enter space-y-3 px-5 pt-1 lg:px-0">
+        <section class="card flex items-center gap-4 p-5" aria-label="Tu cuenta">
           <ui-avatar [name]="userName()" [size]="56" />
           <div class="min-w-0">
-            <p class="truncate text-[19px] font-black">{{ userName() }}</p>
-            <p class="truncate text-[14px] font-semibold text-muted dark:text-muted-dark">
-              {{ user()?.email }} · Médico
-            </p>
+            <p class="truncate text-[20px] font-medium text-ink-strong">{{ userName() }}</p>
+            <p class="truncate text-[14px] text-muted">{{ user()?.email }} · Médico</p>
           </div>
         </section>
-        <button uiBtn variant="danger-soft" type="button" [extraClass]="'w-full'" (click)="logout()">
-          <svg lucideLogOut [size]="18" aria-hidden="true"></svg>
+        <button uiBtn variant="outline" type="button" [extraClass]="'w-full py-3 text-mz-red'" (click)="logout()">
+          <svg lucideLogOut [size]="17" aria-hidden="true"></svg>
           Cerrar sesión
         </button>
       </main>

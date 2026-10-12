@@ -1,14 +1,14 @@
 import { Component, computed, input } from '@angular/core';
 
 const TONES = [
-  'bg-sky text-sky-ink',
-  'bg-mint text-mint-ink',
-  'bg-lemon text-lemon-ink',
-  'bg-peach text-peach-ink',
-  'bg-bubble text-bubble-ink',
+  'bg-sand text-ink',
+  'bg-clay-soft text-clay',
+  'bg-honey-soft text-olive',
+  'bg-olive-soft text-olive',
+  'bg-sand-deep text-ink',
 ];
 
-/** Avatar circular con la inicial sobre pastel (estilo de las listas de la referencia). */
+/** Avatar circular con la inicial sobre tonos tierra (estilo hims). */
 @Component({
   selector: 'ui-avatar',
   template: '{{ initial() }}',
@@ -16,7 +16,7 @@ const TONES = [
     '[class]': 'cls()',
     '[style.width.px]': 'size()',
     '[style.height.px]': 'size()',
-    '[style.font-size.px]': 'size() * 0.42',
+    '[style.font-size.px]': 'size() * 0.4',
     'aria-hidden': 'true',
   },
 })
@@ -31,8 +31,7 @@ export class UiAvatar {
   });
 
   protected readonly cls = computed(() => {
-    const idx =
-      this.tone() ?? (this.initial().charCodeAt(0) % TONES.length);
-    return `flex shrink-0 items-center justify-center rounded-full font-black ${TONES[idx]}`;
+    const idx = this.tone() ?? this.initial().charCodeAt(0) % TONES.length;
+    return `flex shrink-0 items-center justify-center rounded-full font-medium ${TONES[idx]}`;
   });
 }

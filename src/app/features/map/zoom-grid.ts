@@ -11,20 +11,22 @@ import { UiBtn } from '../../shared/ui/button';
   selector: 'app-zoom-grid',
   imports: [UiBtn, LucideArrowLeft, LucideX, LucideTriangleAlert, LucideCheck],
   template: `
-    <div class="px-4 pb-4 pt-1">
-      <div class="flex items-center gap-2">
+    <div class="px-5 pb-5 pt-2">
+      <div class="flex items-center gap-3">
         <button
           uiBtn
+          variant="outline"
+          [icon]="true"
           type="button"
-          [extraClass]="'h-11 w-11 shrink-0 px-0'"
+          [extraClass]="'shrink-0'"
           (click)="back.emit()"
           aria-label="Volver al cuerpo"
         >
           <svg lucideArrowLeft [size]="20" aria-hidden="true"></svg>
         </button>
-        <h2 class="text-[20px]">{{ macroLabel() }}</h2>
+        <h2 class="text-[20px] text-ink-strong">{{ macroLabel() }}</h2>
         <div
-          class="ml-auto grid grid-cols-2 gap-1 rounded-2xl bg-primary-soft p-1 dark:bg-white/10"
+          class="ml-auto grid grid-cols-2 gap-1 rounded-full border border-line bg-sand p-1"
           role="group"
           aria-label="Lado"
         >
@@ -37,7 +39,7 @@ import { UiBtn } from '../../shared/ui/button';
       </div>
 
       <div
-        class="mt-3 grid gap-2"
+        class="mt-4 grid gap-2"
         [style.grid-template-columns]="'repeat(' + cols() + ', minmax(0, 1fr))'"
         role="group"
         [attr.aria-label]="'Cuadrícula ' + macroLabel() + ' lado ' + currentSide()"
@@ -52,19 +54,19 @@ import { UiBtn } from '../../shared/ui/button';
           >
             @switch (cell.color) {
               @case ('RED') {
-                <svg lucideX [size]="20" [strokeWidth]="3" aria-hidden="true"></svg>
+                <svg lucideX [size]="20" [strokeWidth]="2.5" aria-hidden="true"></svg>
               }
               @case ('YELLOW') {
-                <svg lucideTriangleAlert [size]="20" [strokeWidth]="3" aria-hidden="true"></svg>
+                <svg lucideTriangleAlert [size]="20" [strokeWidth]="2.5" aria-hidden="true"></svg>
               }
               @default {
-                <svg lucideCheck [size]="20" [strokeWidth]="3" aria-hidden="true"></svg>
+                <svg lucideCheck [size]="20" [strokeWidth]="2.5" aria-hidden="true"></svg>
               }
             }
           </button>
         }
       </div>
-      <p class="mt-2 text-[12px] font-semibold text-muted dark:text-muted-dark">
+      <p class="mt-3 text-[12px] text-muted">
         Con 6×6 la cuadrícula se compacta para mantener objetivos ≥44px.
       </p>
     </div>
@@ -92,14 +94,14 @@ export class ZoomGrid {
 
   protected sideCls(s: MacroSide): string {
     const on = this.currentSide() === s;
-    return `touch-target focus-ring cursor-pointer rounded-xl px-3 text-[14px] font-extrabold ${
-      on ? 'bg-card shadow dark:bg-card-dark' : 'text-muted dark:text-muted-dark'
+    return `touch-target focus-ring cursor-pointer rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
+      on ? 'border border-line bg-card text-ink' : 'text-muted hover:text-ink'
     }`;
   }
 
   protected cellCls(cell: CellOut): string {
-    const highlight = this.highlightId() === cell.id ? 'ring-4 ring-primary' : '';
-    return `touch-target pressable focus-ring flex aspect-square cursor-pointer items-center justify-center rounded-2xl ${CELL_STYLE[cell.color]} ${highlight}`;
+    const highlight = this.highlightId() === cell.id ? 'ring-2 ring-ink ring-offset-1' : '';
+    return `touch-target pressable focus-ring flex aspect-square cursor-pointer items-center justify-center rounded-2xl border border-line ${CELL_STYLE[cell.color]} ${highlight}`;
   }
 
   protected ariaFor(cell: CellOut): string {

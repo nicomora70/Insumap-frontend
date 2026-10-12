@@ -13,24 +13,24 @@ import { AuthShell } from './auth-shell';
   imports: [ReactiveFormsModule, RouterLink, UiBtn, AuthShell],
   template: `
     <app-auth-shell
-      title="Hola de nuevo"
+      title="Bienvenido de nuevo"
       subtitle="Accede para ver tu mapa y registrar tus dosis."
     >
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <label for="login-email" class="block text-[14px] font-extrabold">Email</label>
+        <label for="login-email" class="block text-[14px] font-medium text-ink">Email</label>
         <input
           id="login-email"
           type="email"
           autocomplete="email"
           placeholder="ana@correo.com"
           formControlName="email"
-          [class]="input + ' mt-1'"
+          [class]="input + ' mt-1.5'"
         />
         @if (emailError(); as msg) {
-          <p role="alert" class="mt-1 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
         }
 
-        <label for="login-password" class="mt-4 block text-[14px] font-extrabold">
+        <label for="login-password" class="mt-5 block text-[14px] font-medium text-ink">
           Contraseña
         </label>
         <input
@@ -39,22 +39,22 @@ import { AuthShell } from './auth-shell';
           autocomplete="current-password"
           placeholder="••••••••"
           formControlName="password"
-          [class]="input + ' mt-1'"
+          [class]="input + ' mt-1.5'"
         />
         @if (passwordError(); as msg) {
-          <p role="alert" class="mt-1 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
         }
         @if (serverError(); as msg) {
-          <p role="alert" class="mt-1 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
         }
 
-        <button uiBtn type="submit" [extraClass]="'mt-5 w-full'" [disabled]="submitting()">
+        <button uiBtn type="submit" [extraClass]="'mt-6 w-full py-3.5'" [disabled]="submitting()">
           {{ submitting() ? 'Un momento…' : 'Entrar' }}
         </button>
-        <p class="mt-3 text-center text-[14px]">
+        <p class="mt-4 text-center text-[14px]">
           <a
             routerLink="/forgot-password"
-            class="focus-ring font-semibold text-primary dark:text-primary-dark"
+            class="font-medium text-ink underline underline-offset-4"
           >
             ¿Olvidaste tu contraseña?
           </a>
@@ -63,7 +63,7 @@ import { AuthShell } from './auth-shell';
 
       <div footer>
         ¿Aún no tienes cuenta?
-        <a routerLink="/register" class="focus-ring font-extrabold text-primary dark:text-primary-dark">
+        <a routerLink="/register" class="font-medium text-ink underline underline-offset-4">
           Crea una
         </a>
       </div>

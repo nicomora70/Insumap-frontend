@@ -16,33 +16,32 @@
 
 ### Color Palette
 
-Paleta implementada en `src/styles.css` (@theme de Tailwind 4). Referencia: tarjeta rosa + lavanda del mockup aprobado.
+Paleta implementada en `src/styles.css` (@theme de Tailwind 4). Referencia: hims.com (tierra/ámbar, monocromo cálido con píldoras negras).
 
 | Role | Hex | CSS Variable |
 |------|-----|--------------|
-| Background | `#F2EEFA` | `--color-app-bg` |
+| Background (crema) | `#FAF5EE` | `--color-app-bg` |
 | Card | `#FFFFFF` | `--color-card` |
-| Foreground (tinta) | `#241D3D` | `--color-plum` |
-| Foreground strong | `#191231` | `--color-plum-strong` |
-| Muted foreground | `#877FA3` | `--color-muted` |
-| Primary (CTA) | `#6C4FD8` | `--color-primary` |
-| Primary strong | `#5A3EC8` | `--color-primary-strong` |
-| Primary soft (chips) | `#ECE6FB` | `--color-primary-soft` |
-| Primary ink | `#4B2FA5` | `--color-primary-ink` |
-| Hero card (rosa) | `#FBD8E6` | `--color-pink` / `--color-bubble` |
-| Hero ink | `#B23C72` | `--color-pink-ink` |
-| Tiles: sky / mint / lemon / peach | `#DBE9FD` `#D3F0E3` `#FDF0C8` `#FFE4CD` | `--color-sky` `--color-mint` `--color-lemon` `--color-peach` |
-| Recuperación RED / YELLOW / GREEN | `#B3261E` `#8A6100` `#0D6A4A` | `--color-mz-red` `--color-mz-yellow` `--color-mz-green` |
-| Ring (foco) | `#8B5CF6` | `--color-ring` |
-| Dark: fondo / tarjeta | `#150F22` / `#201931` | `--color-app-bg-dark` `--color-card-dark` |
+| Arena (superficie suave) | `#F3EADF` | `--color-sand` |
+| Arena profunda | `#EADCC8` | `--color-sand-deep` |
+| Hairline | `#EBE2D5` | `--color-line` |
+| Ink (tinta cálida) | `#1F1A14` | `--color-ink` |
+| Ink strong | `#14100B` | `--color-ink-strong` |
+| Muted | `#8A7E6F` | `--color-muted` |
+| Miel (amber) | `#F9B859` | `--color-honey` / `--color-honey-soft` |
+| Terracota (peru) | `#B98267` | `--color-clay` / `--color-clay-soft` |
+| Oliva | `#9C702F` | `--color-olive` / `--color-olive-soft` |
+| CTA (negro cálido) | `#1F1A14` | `--color-primary` |
+| Recuperación RED / YELLOW / GREEN | `#A63D2A` `#8F6400` `#2F6B4F` | `--color-mz-red` `--color-mz-yellow` `--color-mz-green` |
+| Ring (foco) | `#B98267` | `--color-ring` |
 
-**Color Notes:** lavanda + rosa pastel con CTA morado; el estado de recuperación nunca va solo con color (siempre ícono + patrón + palabra, RNF-05).
+**Color Notes:** base crema con tinta cálida y píldoras negras; ámbar/terracota/oliva solo como acentos. El estado de recuperación nunca va solo con color (siempre ícono + patrón + palabra, RNF-05). Sin modo oscuro (el sistema es claro, como la referencia).
 
 ### Typography
 
-- **Font:** Nunito (400/600/700/800/900), una sola familia para todo.
-- **Mood:** suave, redondeada, cercana; jerarquía con peso (800/900) y no con mayúsculas.
-- **Google Fonts:** [Nunito](https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap)
+- **Font:** DM Sans (400/500/600/700) — sustituto libre de Sofia Pro.
+- **Mood:** editorial, cálido, limpio; títulos grandes en peso 400/500 con tracking negativo.
+- **Google Fonts:** [DM Sans](https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap)
 
 **CSS Import:**
 ```css
@@ -164,21 +163,21 @@ Paleta implementada en `src/styles.css` (@theme de Tailwind 4). Referencia: tarj
 
 ## Style Guidelines
 
-**Style:** Soft pastel cards (mobile first) — implementado con Tailwind 4 en `src/styles.css`
+**Style:** Editorial cálido (hims.com) — implementado con Tailwind 4 en `src/styles.css`
 
-**Keywords:** tarjetas redondeadas (24–28px), superficies planas, sombras muy suaves, lavanda/rosa, CTA morado, densidad táctil (≥44px), nav inferior flotante y sidebar en escritorio
+**Keywords:** crema + tinta cálida, píldoras negras, hairlines en vez de sombras, tarjetas blancas 24px, gradientes suaves miel→arena, tipografía grande en peso 400/500
 
-**Best For:** apps de salud y bienestar con uso en una mano
+**Best For:** salud y bienestar con estética editorial y cercana
 
-**Key Effects:** press con muelle (`cubic-bezier(0.32, 0.72, 0, 1)`, 150ms), fundido de página, hoja inferior deslizante; `prefers-reduced-motion` respetado
+**Key Effects:** press suave (`scale(0.98)`), fundido de página, hoja inferior deslizante; `prefers-reduced-motion` respetado
 
 ### Page Pattern
 
-**Pattern Name:** App shell con tarjeta destacada
+**Pattern Name:** Tarjeta destacada sobre crema
 
-- **Estructura móvil:** saludo + avatar → tarjeta destacada (rosa) con CTA → buscador → chips de macrozonas → accesos rápidos → mapa (cuerpo 3D o lista) → nav inferior flotante.
-- **Estructura escritorio (lg):** sidebar fija + contenido hasta ~1152px; el médico ve mapa e historial en dos columnas.
-- **CTA Placement:** dentro de la tarjeta destacada (primario morado) y accesos rápidos en tiles pastel.
+- **Estructura móvil:** saludo + avatar → tarjeta destacada con gradiente miel (CTA negro + secundario outline) → buscador píldora → chips de macrozonas → accesos rápidos en tarjetas blancas → mapa (cuerpo 3D o lista) → barra inferior plana con hairline.
+- **Estructura escritorio (lg):** sidebar blanca con hairline + contenido hasta ~1152px; el médico ve mapa e historial en dos columnas.
+- **CTA Placement:** píldora negra dentro de la tarjeta destacada; acciones secundarias en outline.
 
 ---
 

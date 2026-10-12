@@ -19,28 +19,28 @@ import { AuthShell } from './auth-shell';
       @if (sent()) {
         <p
           role="status"
-          class="rounded-2xl bg-mz-green-soft px-4 py-3 text-[15px] font-bold text-mz-green dark:bg-white/10 dark:text-[#8fe0bd]"
+          class="rounded-2xl bg-mz-green-soft px-4 py-3.5 text-[14px] font-medium text-mz-green"
         >
           Listo. Si ese email tiene cuenta, recibirás el enlace en unos minutos.
         </p>
       } @else {
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-          <label for="forgot-email" class="block text-[14px] font-extrabold">Email</label>
+          <label for="forgot-email" class="block text-[14px] font-medium text-ink">Email</label>
           <input
             id="forgot-email"
             type="email"
             autocomplete="email"
             placeholder="ana@correo.com"
             formControlName="email"
-            [class]="input + ' mt-1'"
+            [class]="input + ' mt-1.5'"
           />
           @if (emailError(); as msg) {
-            <p role="alert" class="mt-1 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+            <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
           }
           @if (serverError(); as msg) {
-            <p role="alert" class="mt-1 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+            <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
           }
-          <button uiBtn type="submit" [extraClass]="'mt-5 w-full'" [disabled]="submitting()">
+          <button uiBtn type="submit" [extraClass]="'mt-6 w-full py-3.5'" [disabled]="submitting()">
             {{ submitting() ? 'Enviando…' : 'Enviar enlace' }}
           </button>
         </form>
@@ -48,7 +48,7 @@ import { AuthShell } from './auth-shell';
 
       <div footer>
         ¿La recordaste?
-        <a routerLink="/login" class="focus-ring font-extrabold text-primary dark:text-primary-dark">
+        <a routerLink="/login" class="font-medium text-ink underline underline-offset-4">
           Vuelve a entrar
         </a>
       </div>

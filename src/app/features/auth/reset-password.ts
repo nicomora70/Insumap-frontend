@@ -17,37 +17,36 @@ import { AuthShell } from './auth-shell';
       subtitle="Con 8+ caracteres y al menos un número."
     >
       @if (!token) {
-        <p
-          role="alert"
-          class="rounded-2xl bg-mz-red-soft px-4 py-3 text-[15px] font-medium text-mz-red"
-        >
+        <p role="alert" class="rounded-2xl bg-mz-red-soft px-4 py-3.5 text-[14px] font-medium text-mz-red">
           Este enlace no trae token. Pide uno nuevo desde “Olvidé mi contraseña”.
         </p>
       } @else if (done()) {
         <p
           role="status"
-          class="rounded-2xl bg-mz-green-soft px-4 py-3 text-[15px] font-bold text-mz-green dark:bg-white/10 dark:text-[#8fe0bd]"
+          class="rounded-2xl bg-mz-green-soft px-4 py-3.5 text-[14px] font-medium text-mz-green"
         >
           Contraseña actualizada. Ya puedes entrar.
         </p>
       } @else {
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-          <label for="reset-password" class="block text-[14px] font-extrabold">Contraseña nueva</label>
+          <label for="reset-password" class="block text-[14px] font-medium text-ink">
+            Contraseña nueva
+          </label>
           <input
             id="reset-password"
             type="password"
             autocomplete="new-password"
             placeholder="8+ caracteres y un número"
             formControlName="password"
-            [class]="input + ' mt-1'"
+            [class]="input + ' mt-1.5'"
           />
           @if (passwordError(); as msg) {
-            <p role="alert" class="mt-1 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+            <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
           }
           @if (serverError(); as msg) {
-            <p role="alert" class="mt-1 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+            <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
           }
-          <button uiBtn type="submit" [extraClass]="'mt-5 w-full'" [disabled]="submitting()">
+          <button uiBtn type="submit" [extraClass]="'mt-6 w-full py-3.5'" [disabled]="submitting()">
             {{ submitting() ? 'Guardando…' : 'Guardar contraseña' }}
           </button>
         </form>
@@ -55,7 +54,7 @@ import { AuthShell } from './auth-shell';
 
       <div footer>
         ¿Lista?
-        <a routerLink="/login" class="focus-ring font-extrabold text-primary dark:text-primary-dark">
+        <a routerLink="/login" class="font-medium text-ink underline underline-offset-4">
           Entra con tu contraseña nueva
         </a>
       </div>

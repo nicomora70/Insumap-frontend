@@ -19,34 +19,34 @@ import { AuthShell } from './auth-shell';
       subtitle="Tus datos de salud solo los ves tú y los médicos que autorices."
     >
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <label for="reg-name" class="block text-[14px] font-extrabold">Nombre</label>
-        <input id="reg-name" autocomplete="name" placeholder="Ana" formControlName="name" [class]="input + ' mt-1'" />
+        <label for="reg-name" class="block text-[14px] font-medium text-ink">Nombre</label>
+        <input id="reg-name" autocomplete="name" placeholder="Ana" formControlName="name" [class]="input + ' mt-1.5'" />
         @if (nameError(); as msg) {
-          <p role="alert" class="mt-1 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
         }
 
-        <label for="reg-email" class="mt-4 block text-[14px] font-extrabold">Email</label>
-        <input id="reg-email" type="email" autocomplete="email" placeholder="ana@correo.com" formControlName="email" [class]="input + ' mt-1'" />
+        <label for="reg-email" class="mt-5 block text-[14px] font-medium text-ink">Email</label>
+        <input id="reg-email" type="email" autocomplete="email" placeholder="ana@correo.com" formControlName="email" [class]="input + ' mt-1.5'" />
         @if (emailError(); as msg) {
-          <p role="alert" class="mt-1 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
         }
 
-        <label for="reg-password" class="mt-4 block text-[14px] font-extrabold">Contraseña</label>
+        <label for="reg-password" class="mt-5 block text-[14px] font-medium text-ink">Contraseña</label>
         <input
           id="reg-password"
           type="password"
           autocomplete="new-password"
           placeholder="8+ caracteres y un número"
           formControlName="password"
-          [class]="input + ' mt-1'"
+          [class]="input + ' mt-1.5'"
         />
         @if (passwordError(); as msg) {
-          <p role="alert" class="mt-1 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
         }
 
-        <fieldset class="mt-4">
-          <legend class="text-[14px] font-bold">Soy</legend>
-          <div class="mt-1 grid grid-cols-2 gap-2">
+        <fieldset class="mt-5">
+          <legend class="text-[14px] font-medium text-ink">Soy</legend>
+          <div class="mt-2 grid grid-cols-2 gap-2">
             <label [class]="roleCls('PATIENT')">
               <input type="radio" value="PATIENT" formControlName="role" class="sr-only" />
               <svg lucideHeartPulse [size]="18" aria-hidden="true"></svg>
@@ -61,41 +61,39 @@ import { AuthShell } from './auth-shell';
         </fieldset>
 
         @if (isDoctorForm()) {
-          <label for="reg-license" class="mt-4 block text-[14px] font-extrabold">
+          <label for="reg-license" class="mt-5 block text-[14px] font-medium text-ink">
             Registro profesional
           </label>
           <input
             id="reg-license"
             placeholder="N.º de tarjeta profesional"
             formControlName="license_number"
-            [class]="input + ' mt-1'"
+            [class]="input + ' mt-1.5'"
           />
           @if (licenseError(); as msg) {
-            <p role="alert" class="mt-1 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+            <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
           }
         }
 
-        <label class="mt-4 flex cursor-pointer items-start gap-2 text-[14px]">
-          <input type="checkbox" formControlName="accept_terms" class="mt-1 h-5 w-5 accent-[#6c4fd8]" />
+        <label class="mt-5 flex cursor-pointer items-start gap-2.5 text-[14px] text-ink">
+          <input type="checkbox" formControlName="accept_terms" class="mt-0.5 h-5 w-5 accent-[#1f1a14]" />
           Acepto el tratamiento de mis datos de salud según lo descrito en la app.
         </label>
         @if (termsError(); as msg) {
-          <p role="alert" class="mt-1 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
         }
         @if (serverError(); as msg) {
-          <p role="alert" class="mt-1 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
         }
 
-        <button uiBtn type="submit" [extraClass]="'mt-5 w-full'" [disabled]="submitting()">
+        <button uiBtn type="submit" [extraClass]="'mt-6 w-full py-3.5'" [disabled]="submitting()">
           {{ submitting() ? 'Un momento…' : 'Crear cuenta' }}
         </button>
       </form>
 
       <div footer>
         ¿Ya tienes cuenta?
-        <a routerLink="/login" class="focus-ring font-extrabold text-primary dark:text-primary-dark">
-          Entra
-        </a>
+        <a routerLink="/login" class="font-medium text-ink underline underline-offset-4">Entra</a>
       </div>
     </app-auth-shell>
   `,
@@ -127,10 +125,10 @@ export class RegisterPage {
 
   protected roleCls(role: 'PATIENT' | 'DOCTOR'): string {
     const selected = this.roleValue() === role;
-    return `touch-target pressable focus-ring flex cursor-pointer items-center justify-center gap-2 rounded-2xl border text-[15px] font-bold ${
+    return `touch-target pressable focus-ring flex cursor-pointer items-center justify-center gap-2 rounded-full border text-[15px] font-medium ${
       selected
-        ? 'border-primary bg-primary-soft text-primary-ink dark:border-primary-dark dark:bg-white/10 dark:text-primary-dark'
-        : 'border-black/10 text-muted dark:border-white/15 dark:text-muted-dark'
+        ? 'border-ink bg-primary text-white'
+        : 'border-line bg-card text-ink hover:bg-sand'
     }`;
   }
 

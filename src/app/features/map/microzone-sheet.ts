@@ -5,6 +5,7 @@ import { MapStore } from '../../core/data/map.store';
 import type { CellColor, CellOut } from '../../core/data/types';
 import { COLOR_WORD, formatAppliedAt } from '../../core/util/format';
 import { UiBtn } from '../../shared/ui/button';
+import { INPUT_SM } from '../../shared/ui/classes';
 
 export interface RegisteredEvent {
   injectionId: string;
@@ -30,19 +31,19 @@ const MACRO_NAME: Record<string, string> = {
   selector: 'app-microzone-sheet',
   imports: [UiBtn, LucideTriangleAlert],
   template: `
-    <div class="fade-enter fixed inset-0 z-30 bg-plum/30" (click)="close.emit()" aria-hidden="true"></div>
+    <div class="fade-enter fixed inset-0 z-30 bg-ink/30" (click)="close.emit()" aria-hidden="true"></div>
     <div
       role="dialog"
       aria-modal="true"
       [attr.aria-label]="'Microzona ' + cell().id"
-      class="sheet-enter fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg rounded-t-[28px] bg-card px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 dark:bg-card-dark"
+      class="sheet-enter fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg rounded-t-3xl border-t border-line bg-card px-6 pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-3"
     >
-      <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-primary-soft dark:bg-white/20" aria-hidden="true"></div>
-      <p class="text-[13px] font-semibold text-muted dark:text-muted-dark">{{ header() }}</p>
-      <h2 class="font-mono text-[20px] font-black">{{ cell().id }}</h2>
-      <p class="mt-1 text-[15px]">
+      <div class="mx-auto mb-4 h-1 w-10 rounded-full bg-sand-deep" aria-hidden="true"></div>
+      <p class="text-[13px] text-muted">{{ header() }}</p>
+      <h2 class="font-mono text-[21px] font-medium text-ink-strong">{{ cell().id }}</h2>
+      <p class="mt-1.5 text-[15px]">
         <strong [class]="colorTxt()">{{ colorWord() }} · {{ pct() }}% recup.</strong>
-        <span class="font-semibold text-muted dark:text-muted-dark">
+        <span class="text-muted">
           {{
             cell().hours_remaining <= 0
               ? 'Disponible ahora'
@@ -50,14 +51,14 @@ const MACRO_NAME: Record<string, string> = {
           }}
         </span>
       </p>
-      <p class="text-[14px] font-semibold text-muted dark:text-muted-dark">
+      <p class="text-[14px] text-muted">
         {{ lastText() }} · {{ cell().uses_30d }} usos en 30 días
       </p>
 
       @if (!warn()) {
-        <div class="mt-3">
-          <p class="text-[14px] font-extrabold">Hora de aplicación</p>
-          <div class="mt-1 grid grid-cols-2 gap-2">
+        <div class="mt-5">
+          <p class="text-[14px] font-medium text-ink">Hora de aplicación</p>
+          <div class="mt-2 grid grid-cols-2 gap-2">
             <button
               type="button"
               [attr.aria-pressed]="timeMode() === 'now'"
@@ -71,17 +72,17 @@ const MACRO_NAME: Record<string, string> = {
               aria-label="Elegir hora de aplicación"
               [value]="customTime()"
               (change)="onCustomTime($event)"
-              class="touch-target focus-ring rounded-2xl border border-transparent bg-primary-soft/80 px-3 text-[15px] dark:bg-white/10"
+              [class]="inputSm"
             />
           </div>
         </div>
         @if (error(); as msg) {
-          <p role="alert" class="mt-2 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-2.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
         }
         <button
           uiBtn
           type="button"
-          [extraClass]="'mt-3 w-full'"
+          [extraClass]="'mt-5 w-full py-3.5'"
           [disabled]="map.registerPending()"
           (click)="onRegisterClick()"
         >
@@ -89,7 +90,7 @@ const MACRO_NAME: Record<string, string> = {
         </button>
       } @else {
         <p
-          class="mt-3 flex items-start gap-2 rounded-2xl bg-mz-yellow-soft px-4 py-3 text-[14px] font-bold text-mz-yellow dark:bg-white/10 dark:text-[#f2d478]"
+          class="mt-5 flex items-start gap-2.5 rounded-2xl bg-honey-soft px-4 py-3.5 text-[14px] font-medium text-olive"
         >
           <svg lucideTriangleAlert [size]="18" class="mt-0.5 shrink-0" aria-hidden="true"></svg>
           <span>
@@ -98,14 +99,14 @@ const MACRO_NAME: Record<string, string> = {
           </span>
         </p>
         @if (error(); as msg) {
-          <p role="alert" class="mt-2 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-2.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
         }
-        <div class="mt-3 space-y-2">
+        <div class="mt-5 space-y-2">
           @if (suggestedId(); as suggested) {
             <button
               uiBtn
               type="button"
-              [extraClass]="'w-full'"
+              [extraClass]="'w-full py-3.5'"
               (click)="useSuggested.emit(suggested)"
             >
               Usar sugerida ({{ suggested }})
@@ -115,13 +116,13 @@ const MACRO_NAME: Record<string, string> = {
             uiBtn
             variant="soft"
             type="button"
-            [extraClass]="'w-full'"
+            [extraClass]="'w-full py-3.5'"
             [disabled]="map.registerPending()"
             (click)="submit(true)"
           >
             {{ map.registerPending() ? 'Registrando…' : 'Registrar igual' }}
           </button>
-          <button uiBtn variant="ghost" type="button" [extraClass]="'w-full'" (click)="warn.set(false)">
+          <button uiBtn variant="ghost" type="button" [extraClass]="'w-full py-3'" (click)="warn.set(false)">
             Atrás
           </button>
         </div>
@@ -144,6 +145,7 @@ export class MicrozoneSheet {
   protected readonly timeMode = signal<'now' | 'custom'>('now');
   protected readonly customTime = signal('');
   protected readonly error = signal<string | null>(null);
+  protected readonly inputSm = INPUT_SM;
 
   protected readonly pct = computed(() => Math.min(100, Math.round(this.cell().ratio * 100)));
   protected readonly hoursRounded = computed(() => Math.round(this.cell().hours_remaining));
@@ -163,10 +165,8 @@ export class MicrozoneSheet {
 
   protected timeBtnCls(mode: 'now' | 'custom'): string {
     const on = this.timeMode() === mode;
-    return `touch-target focus-ring cursor-pointer rounded-2xl text-[15px] font-extrabold ${
-      on
-        ? 'bg-primary-soft text-primary-ink dark:bg-white/10 dark:text-primary-dark'
-        : 'bg-primary-soft/50 text-muted dark:bg-white/5 dark:text-muted-dark'
+    return `touch-target focus-ring cursor-pointer rounded-2xl border text-[15px] font-medium transition-colors ${
+      on ? 'border-line bg-card text-ink' : 'border-line bg-sand text-muted hover:text-ink'
     }`;
   }
 

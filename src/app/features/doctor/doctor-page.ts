@@ -59,20 +59,22 @@ interface ZoomState {
       <main class="page-enter">
         @if (detail(); as sel) {
           <!-- P11: detalle del paciente (solo lectura) -->
-          <div class="px-4 pt-3 lg:px-8">
-            <div class="flex items-center gap-2">
+          <div class="px-5 pt-1 lg:px-0">
+            <div class="flex items-center gap-3">
               <button
                 uiBtn
+                variant="outline"
+                [icon]="true"
                 type="button"
-                [extraClass]="'h-11 w-11 shrink-0 px-0'"
+                [extraClass]="'shrink-0'"
                 (click)="closeDetail()"
                 aria-label="Volver a pacientes"
               >
                 <svg lucideArrowLeft [size]="20" aria-hidden="true"></svg>
               </button>
-              <h2 class="text-[20px]">{{ sel.name }}</h2>
+              <h2 class="text-[20px] text-ink-strong">{{ sel.name }}</h2>
               <span
-                class="inline-flex items-center gap-1 rounded-full bg-sky px-2.5 py-1 text-[12px] font-extrabold text-sky-ink dark:bg-white/10 dark:text-[#a8c8f0]"
+                class="inline-flex items-center gap-1.5 rounded-full bg-sand px-3 py-1 text-[12px] font-medium text-muted"
               >
                 <svg lucideEye [size]="13" aria-hidden="true"></svg>
                 Solo lectura
@@ -81,7 +83,7 @@ interface ZoomState {
 
             <!-- Toggle en móvil; en lg se ven dos columnas -->
             <div
-              class="mx-auto mt-2 grid w-56 grid-cols-2 gap-1 rounded-2xl bg-primary-soft p-1 lg:hidden dark:bg-white/10"
+              class="mt-3 grid w-64 grid-cols-2 gap-1 rounded-full border border-line bg-sand p-1 lg:hidden"
               role="group"
               aria-label="Vista del paciente"
             >
@@ -103,22 +105,19 @@ interface ZoomState {
               </button>
             </div>
 
-            <div class="mt-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5">
+            <div class="mt-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
               <!-- Columna mapa -->
               <div class="space-y-3" [class.hidden]="view() === 'historial'" [class.lg:block]="true">
                 @if (patientMap().loading) {
-                  <div
-                    class="h-96 animate-pulse rounded-[24px] bg-primary-soft/70 dark:bg-white/10"
-                    aria-label="Cargando mapa"
-                  ></div>
+                  <div class="h-96 animate-pulse rounded-3xl bg-sand" aria-label="Cargando mapa"></div>
                 } @else if (patientMap().error; as msg) {
-                  <div class="card p-4">
-                    <p class="text-center text-[14px] font-bold text-mz-red">{{ msg }}</p>
+                  <div class="card p-5">
+                    <p class="text-center text-[14px] font-medium text-mz-red">{{ msg }}</p>
                     <button
                       uiBtn
-                      variant="soft"
+                      variant="outline"
                       type="button"
-                      [extraClass]="'mt-2 w-full'"
+                      [extraClass]="'mt-3 w-full py-3'"
                       (click)="reloadPatientMap()"
                     >
                       Reintentar
@@ -146,31 +145,29 @@ interface ZoomState {
                     </section>
                   }
                   @if (cell(); as c) {
-                    <section class="card p-4">
+                    <section class="card p-5">
                       <div class="flex items-center justify-between gap-2">
-                        <p class="font-mono text-[16px] font-black">{{ c.id }}</p>
+                        <p class="font-mono text-[15px] font-medium text-ink">{{ c.id }}</p>
                         <div class="flex items-center gap-2">
                           <ui-pill [color]="c.color" />
                           <button
                             type="button"
                             (click)="cell.set(null)"
                             aria-label="Cerrar detalle"
-                            class="pressable focus-ring cursor-pointer rounded-xl px-3 py-2 text-[14px] font-extrabold text-primary dark:text-primary-dark"
+                            class="pressable focus-ring cursor-pointer rounded-full px-3 py-2 text-[13px] font-medium text-ink underline underline-offset-4"
                           >
                             Cerrar
                           </button>
                         </div>
                       </div>
-                      <p class="mt-1 text-[14px] font-semibold text-muted dark:text-muted-dark">
-                        {{ c.uses_30d }} usos en 30 días
-                      </p>
+                      <p class="mt-1.5 text-[13px] text-muted">{{ c.uses_30d }} usos en 30 días</p>
                     </section>
                   }
                 }
               </div>
 
               <!-- Columna historial -->
-              <div class="mt-3 space-y-3 lg:mt-0" [class.hidden]="view() === 'mapa'" [class.lg:block]="true">
+              <div class="mt-4 space-y-3 lg:mt-0" [class.hidden]="view() === 'mapa'" [class.lg:block]="true">
                 <app-export-card
                   [basePath]="'/doctor/patients/' + sel.id + '/history'"
                   [filename]="'insumap-' + sel.name"
@@ -184,13 +181,13 @@ interface ZoomState {
           </div>
         } @else {
           <!-- P10: lista de pacientes -->
-          <div class="space-y-3 px-4 pt-3 lg:px-8">
-            <section class="card p-4 sm:p-5" aria-label="Agregar paciente">
-              <h2 class="flex items-center gap-2 text-[17px]">
-                <svg lucideLink2 [size]="18" class="text-primary dark:text-primary-dark" aria-hidden="true"></svg>
+          <div class="space-y-3 px-5 pt-1 lg:px-0">
+            <section class="card p-5" aria-label="Agregar paciente">
+              <h2 class="flex items-center gap-2 text-[17px] text-ink-strong">
+                <svg lucideLink2 [size]="17" aria-hidden="true"></svg>
                 Agregar paciente
               </h2>
-              <div class="mt-2 flex gap-2">
+              <div class="mt-3 flex gap-2">
                 <input
                   [value]="code()"
                   (input)="onCode($event)"
@@ -202,7 +199,7 @@ interface ZoomState {
                 <button
                   uiBtn
                   type="button"
-                  [extraClass]="'shrink-0'"
+                  [extraClass]="'shrink-0 py-3'"
                   [disabled]="links.redeeming() || !code().trim()"
                   (click)="redeem()"
                 >
@@ -210,39 +207,38 @@ interface ZoomState {
                 </button>
               </div>
               @if (codeError(); as msg) {
-                <p role="alert" class="mt-2 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+                <p role="alert" class="mt-2.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
               }
             </section>
 
             @if (links.loading() && links.links().length === 0) {
-              <div
-                class="h-20 animate-pulse rounded-[24px] bg-primary-soft/70 dark:bg-white/10"
-                aria-label="Cargando pacientes"
-              ></div>
+              <div class="h-20 animate-pulse rounded-3xl bg-sand" aria-label="Cargando pacientes"></div>
             } @else if (!links.loading() && links.links().length === 0) {
-              <div class="card p-4">
-                <p class="text-center text-[14px] font-semibold text-muted dark:text-muted-dark">
+              <div class="card p-5">
+                <p class="text-center text-[14px] text-muted">
                   Sin pacientes vinculados. Pide a tu paciente su código de 8 caracteres.
                 </p>
               </div>
             }
-            <ul class="space-y-2">
-              @for (link of links.links(); track link.id) {
-                <li>
-                  <button
-                    type="button"
-                    (click)="openDetail(link.patient_id, link.patient_name)"
-                    class="pressable focus-ring touch-target card flex w-full cursor-pointer items-center gap-3 px-4 py-3"
-                  >
-                    <ui-avatar [name]="link.patient_name" [size]="44" />
-                    <span class="min-w-0 flex-1 truncate text-left text-[16px] font-extrabold">
-                      {{ link.patient_name }}
-                    </span>
-                    <svg lucideChevronRight [size]="20" class="text-muted dark:text-muted-dark" aria-hidden="true"></svg>
-                  </button>
-                </li>
-              }
-            </ul>
+            @if (links.links().length > 0) {
+              <ul class="card divide-y divide-line overflow-hidden">
+                @for (link of links.links(); track link.id) {
+                  <li>
+                    <button
+                      type="button"
+                      (click)="openDetail(link.patient_id, link.patient_name)"
+                      class="pressable focus-ring flex w-full cursor-pointer items-center gap-3.5 px-5 py-4 text-left hover:bg-sand"
+                    >
+                      <ui-avatar [name]="link.patient_name" [size]="44" />
+                      <span class="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">
+                        {{ link.patient_name }}
+                      </span>
+                      <svg lucideChevronRight [size]="19" class="text-muted" aria-hidden="true"></svg>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
           </div>
         }
       </main>
@@ -307,8 +303,8 @@ export class DoctorPage {
 
   protected segCls(mode: 'mapa' | 'historial'): string {
     const on = this.view() === mode;
-    return `touch-target focus-ring cursor-pointer rounded-xl text-[14px] font-extrabold ${
-      on ? 'bg-card shadow dark:bg-card-dark' : 'text-muted dark:text-muted-dark'
+    return `touch-target focus-ring cursor-pointer rounded-full px-4 py-2 text-[14px] font-medium transition-colors ${
+      on ? 'border border-line bg-card text-ink' : 'text-muted hover:text-ink'
     }`;
   }
 

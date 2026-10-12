@@ -11,18 +11,18 @@ import { UiBtn } from './button';
   template: `
     @if (toast.toast(); as t) {
       <div
-        class="fixed inset-x-0 bottom-28 z-40 mx-auto w-full max-w-lg px-4 lg:bottom-10 lg:left-72 lg:right-auto lg:max-w-md"
+        class="fixed inset-x-0 bottom-24 z-40 mx-auto w-full max-w-lg px-4 lg:bottom-10 lg:left-72 lg:right-auto lg:max-w-md"
         role="status"
       >
         <div
-          class="chrome-translucent flex items-center justify-between gap-3 rounded-[24px] border border-white/70 px-4 py-3 shadow-lg dark:border-white/10"
+          class="chrome-translucent flex items-center justify-between gap-3 rounded-full border border-line px-5 py-3 shadow-[0_12px_32px_rgb(31_26_20/0.10)]"
         >
-          <p class="text-[14px] font-bold">{{ t.text }}</p>
+          <p class="text-[14px] font-medium text-ink">{{ t.text }}</p>
           @if (t.canUndo) {
             <button
               uiBtn
               type="button"
-              [extraClass]="'shrink-0'"
+              [extraClass]="'shrink-0 px-4 py-2 text-[13px]'"
               [disabled]="map.undoPending()"
               (click)="undo()"
             >

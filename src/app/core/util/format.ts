@@ -48,11 +48,11 @@ export function formatHours(hours: number): string {
 const STATUS_LABEL: Record<InjectionOut['status'], { text: string; className: string }> = {
   REGISTERED: {
     text: 'Registrada',
-    className: 'bg-mz-green-soft text-mz-green dark:bg-white/10 dark:text-[#8fe0bd]',
+    className: 'bg-mz-green-soft text-mz-green',
   },
   UNDONE: {
     text: 'Deshecha',
-    className: 'bg-primary-soft text-muted dark:bg-white/10 dark:text-muted-dark',
+    className: 'bg-sand text-muted',
   },
 };
 

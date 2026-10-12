@@ -37,13 +37,13 @@ export function macroCells(map: MapResponse, macro: MacroCode): CellOut[] {
   return zone?.sides.flatMap((s) => s.cells) ?? [];
 }
 
-/** Tinte pastel del cuerpo por estado (el estado se repite con icono + palabra). */
+/** Tinte cálido del cuerpo por estado (el estado se repite con icono + palabra). */
 export const BODY_TINT: Record<CellColor, string> = {
-  RED: '#f0a19c',
-  YELLOW: '#f5cf8d',
-  GREEN: '#a9e0c6',
+  RED: '#d99c8b',
+  YELLOW: '#eec98f',
+  GREEN: '#a9c3a0',
 };
-export const BODY_NEUTRAL = '#d9d2ec';
+export const BODY_NEUTRAL = '#e9dcc9';
 
 export function macroTint(map: MapResponse, macro: MacroCode): string {
   const cells = macroCells(map, macro);

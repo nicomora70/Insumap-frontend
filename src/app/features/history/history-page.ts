@@ -17,7 +17,7 @@ import { HistoryList } from '../history/history-list';
       [tabs]="tabs"
       active="historial"
     >
-      <main class="page-enter space-y-3 px-4 pt-3 lg:px-8">
+      <main class="page-enter space-y-3 px-5 pt-1 lg:px-0">
         <app-export-card basePath="/history" filename="insumap-historial" />
         <app-history-list [patientId]="null" />
       </main>

@@ -18,9 +18,9 @@ import type { CellColor, MapResponse } from '../../core/data/types';
 import { MACROS, macroCells, macroTint, worstColor } from '../../core/util/body';
 import type { MacroCode } from '../../core/util/body';
 
-const NEUTRAL = '#d9d2ec';
-const PLUM = '#3b2f55';
-const CHEEK = '#f7bfd4';
+const NEUTRAL = '#e9dcc9';
+const PLUM = '#2a2118';
+const CHEEK = '#e8a98f';
 
 /** Posición de la etiqueta flotante de cada zona (sobre el maniquí kawaii). */
 const ZONE_BADGE: Record<MacroCode, [number, number, number]> = {
@@ -56,21 +56,21 @@ const LABEL_CLASS: Record<CellColor, string> = {
     >
       @if (!ready()) {
         <div class="absolute inset-0 flex items-center justify-center">
-          <p class="animate-pulse text-[14px] font-bold text-muted dark:text-muted-dark">
+          <p class="animate-pulse text-[14px] font-medium text-muted">
             Cargando cuerpo…
           </p>
         </div>
       }
       <div
         aria-hidden="true"
-        class="pointer-events-none absolute bottom-8 left-1/2 h-10 w-60 -translate-x-1/2 rounded-full bg-primary/15 blur-lg"
+        class="pointer-events-none absolute bottom-8 left-1/2 h-10 w-60 -translate-x-1/2 rounded-full bg-ink/10 blur-lg"
       ></div>
       <canvas #canvasRef class="relative h-full w-full touch-none"></canvas>
 
       @for (macro of macros; track macro) {
         <span
           #lbl
-          class="pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded-full bg-white px-2 py-0.5 text-[11px] font-extrabold shadow-md dark:bg-card-dark"
+          class="pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded-full border border-line bg-card px-2.5 py-1 text-[11px] font-medium shadow-[0_4px_12px_rgb(31_26_20/0.08)]"
           [class]="labelClass(macro)"
         >
           @if (suggestionMacro() === macro) {
@@ -87,7 +87,7 @@ const LABEL_CLASS: Record<CellColor, string> = {
       }
 
       <p
-        class="pointer-events-none absolute inset-x-0 bottom-1 text-center text-[12px] font-bold text-muted dark:text-muted-dark"
+        class="pointer-events-none absolute inset-x-0 bottom-1 text-center text-[12px] font-medium text-muted"
       >
         Arrastra para girar · toca una zona
       </p>
@@ -166,7 +166,7 @@ export class Body3D implements AfterViewInit, OnDestroy {
   }
 
   protected labelClass(macro: MacroCode): string {
-    if (this.suggestionMacro() === macro) return 'text-primary dark:text-primary-dark';
+    if (this.suggestionMacro() === macro) return 'text-olive';
     return LABEL_CLASS[this.labelColor(macro)];
   }
 

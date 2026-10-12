@@ -75,63 +75,61 @@ interface ZoomState {
     >
       <main class="page-enter">
         @if (mapStore.loading() && !mapStore.map()) {
-          <div class="space-y-3 px-4 pt-3" aria-label="Cargando mapa">
-            <div class="h-36 animate-pulse rounded-[24px] bg-primary-soft/70 dark:bg-white/10"></div>
-            <div class="h-[420px] animate-pulse rounded-[24px] bg-primary-soft/70 dark:bg-white/10"></div>
+          <div class="space-y-3 px-5 pt-1 lg:px-0" aria-label="Cargando mapa">
+            <div class="h-40 animate-pulse rounded-3xl bg-sand"></div>
+            <div class="h-[420px] animate-pulse rounded-3xl bg-sand"></div>
           </div>
         } @else if (mapStore.error(); as msg) {
           <div class="mx-auto flex max-w-md flex-col items-center px-6 pb-32 pt-16 text-center">
-            <p class="text-[16px] font-extrabold">No pudimos cargar tu mapa</p>
-            <p class="mt-1 text-[14px] text-muted dark:text-muted-dark">{{ msg }}</p>
-            <button uiBtn type="button" [extraClass]="'mt-4 w-full'" (click)="mapStore.refresh()">
+            <p class="text-[18px] font-medium text-ink-strong">No pudimos cargar tu mapa</p>
+            <p class="mt-2 text-[14px] text-muted">{{ msg }}</p>
+            <button uiBtn type="button" [extraClass]="'mt-5 w-full py-3.5'" (click)="mapStore.refresh()">
               Reintentar
             </button>
           </div>
         } @else if (mapStore.map(); as map) {
           <div
-            class="space-y-3 px-4 pt-3 md:grid md:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)] md:items-start md:gap-5 md:space-y-0 lg:px-8"
+            class="space-y-3 px-5 pt-1 md:grid md:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)] md:items-start md:gap-6 md:space-y-0 lg:px-0"
           >
-            <!-- Tarjeta rosa: sugerencia de la próxima dosis -->
+            <!-- Tarjeta destacada: sugerencia de la próxima dosis -->
             @if (!zoom() && topSuggestion(); as sug) {
               <section
                 aria-label="Sugerencia para la próxima dosis"
-                class="rounded-[26px] bg-pink p-4 md:sticky md:top-24 md:col-start-2 md:row-start-1"
+                class="rounded-3xl border border-line bg-gradient-to-br from-honey-soft to-sand p-5 md:sticky md:top-24 md:col-start-2 md:row-start-1"
               >
-                <div class="flex items-start gap-3">
+                <div class="flex items-start gap-4">
                   <span
-                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-pink-ink"
+                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-card text-ink"
                   >
-                    <svg lucideSyringe [size]="24" aria-hidden="true"></svg>
+                    <svg lucideSyringe [size]="22" aria-hidden="true"></svg>
                   </span>
                   <div class="min-w-0 flex-1">
-                    <p
-                      class="flex items-center gap-1.5 text-[12px] font-black uppercase tracking-wide text-pink-ink"
-                    >
-                      <svg lucideStar [size]="13" [strokeWidth]="2.8" aria-hidden="true"></svg>
+                    <p class="eyebrow flex items-center gap-1.5 text-olive">
+                      <svg lucideStar [size]="12" [strokeWidth]="2.4" aria-hidden="true"></svg>
                       Tu próxima dosis
                     </p>
                     <p
-                      class="mt-0.5 text-[17px] font-extrabold leading-snug text-plum-strong"
+                      class="mt-1.5 text-[22px] font-normal leading-snug tracking-[-0.01em] text-ink-strong"
                     >
                       {{ describe(sug.microzone_id) }}
-                      <span class="font-mono text-[13px]">({{ sug.microzone_id }})</span>
+                      <span class="font-mono text-[13px] text-muted">({{ sug.microzone_id }})</span>
                     </p>
                   </div>
                 </div>
-                <div class="mt-3 grid grid-cols-2 gap-2">
+                <div class="mt-5 grid grid-cols-2 gap-2">
                   <button
                     uiBtn
                     type="button"
-                    [extraClass]="'w-full'"
+                    [extraClass]="'w-full py-3'"
                     (click)="locate(sug.microzone_id)"
                   >
                     Ver en el mapa
                   </button>
                   <button
                     uiBtn
-                    variant="white"
+                    variant="outline"
                     type="button"
-                    [extraClass]="'w-full'"
+                    [extraClass]="'w-full py-3'"
                     (click)="askWhy(sug.microzone_id)"
                   >
                     ¿Por qué?
@@ -142,23 +140,21 @@ interface ZoomState {
 
             <!-- Buscador: pregunta directa al asistente -->
             <form class="md:col-start-1" (ngSubmit)="submitSearch()" role="search">
-              <div
-                class="flex items-center gap-2 rounded-[22px] bg-primary-soft px-4 py-1.5 dark:bg-white/10"
-              >
+              <div class="flex items-center gap-2 rounded-full border border-line bg-card py-1 pl-5 pr-1.5">
                 <svg
                   lucideSearch
                   [size]="18"
-                  class="shrink-0 text-primary-ink dark:text-primary-dark"
+                  class="shrink-0 text-muted"
                   aria-hidden="true"
                 ></svg>
                 <input
-                  class="touch-target min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-plum outline-none placeholder:text-muted/70 dark:text-plum-dark dark:placeholder:text-muted-dark/70"
+                  class="touch-target min-w-0 flex-1 bg-transparent text-[15px] font-normal text-ink outline-none placeholder:text-muted/80"
                   [value]="search()"
                   (input)="onSearchInput($event)"
                   placeholder="¿Cómo podemos ayudarte?"
                   aria-label="Pregúntale al asistente"
                 />
-                <button uiBtn type="submit" [extraClass]="'h-9 min-h-0 px-3 text-[13px]'">
+                <button uiBtn type="submit" [extraClass]="'shrink-0 px-4 py-2 text-[14px]'">
                   Preguntar
                 </button>
               </div>
@@ -166,23 +162,21 @@ interface ZoomState {
 
             <!-- Chips de macrozonas con estado -->
             <div
-              class="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:col-start-1 md:mx-0 md:px-0"
+              class="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 md:col-start-1 md:mx-0 md:px-0"
               aria-label="Macrozonas"
             >
               @for (macro of macros; track macro) {
                 <button type="button" (click)="openMacro(macro)" [class]="chipCls()">
                   <span
-                    class="flex h-9 w-9 items-center justify-center rounded-xl bg-white/80 text-primary-ink dark:bg-white/10 dark:text-primary-dark"
+                    class="flex h-9 w-9 items-center justify-center rounded-full bg-sand text-ink"
                   >
                     <ng-container
-                      *ngComponentOutlet="macroIcon(macro); inputs: { size: 18 }"
+                      *ngComponentOutlet="macroIcon(macro); inputs: { size: 17 }"
                     />
                   </span>
                   <span class="flex flex-col items-start leading-tight">
-                    <span class="font-extrabold text-plum dark:text-plum-dark">
-                      {{ macroLabel(macro) }}
-                    </span>
-                    <span class="flex items-center gap-1 text-[11px] font-bold text-muted dark:text-muted-dark">
+                    <span class="font-medium text-ink">{{ macroLabel(macro) }}</span>
+                    <span class="flex items-center gap-1.5 text-[11px] text-muted">
                       <span class="h-1.5 w-1.5 rounded-full" [class]="dotCls(macro)"></span>
                       {{ macroPct(macro) }}% {{ macroWord(macro) }}
                     </span>
@@ -193,16 +187,22 @@ interface ZoomState {
 
             <!-- Accesos rápidos -->
             <div class="grid grid-cols-3 gap-2 md:col-start-1">
-              <a routerLink="/historial" [class]="tileCls('sky')">
-                <svg lucideHistory [size]="24" [strokeWidth]="2.2" aria-hidden="true"></svg>
+              <a routerLink="/historial" [class]="tileCls()">
+                <span class="flex h-11 w-11 items-center justify-center rounded-full bg-sand">
+                  <svg lucideHistory [size]="20" aria-hidden="true"></svg>
+                </span>
                 Historial
               </a>
-              <a routerLink="/dosis" [class]="tileCls('lemon')">
-                <svg lucideBellRing [size]="24" [strokeWidth]="2.2" aria-hidden="true"></svg>
+              <a routerLink="/dosis" [class]="tileCls()">
+                <span class="flex h-11 w-11 items-center justify-center rounded-full bg-honey-soft text-olive">
+                  <svg lucideBellRing [size]="20" aria-hidden="true"></svg>
+                </span>
                 Mis dosis
               </a>
-              <a routerLink="/ayuda" [class]="tileCls('mint')">
-                <svg lucideSparkles [size]="24" [strokeWidth]="2.2" aria-hidden="true"></svg>
+              <a routerLink="/ayuda" [class]="tileCls()">
+                <span class="flex h-11 w-11 items-center justify-center rounded-full bg-clay-soft text-clay">
+                  <svg lucideSparkles [size]="20" aria-hidden="true"></svg>
+                </span>
                 Asistente
               </a>
             </div>
@@ -220,7 +220,7 @@ interface ZoomState {
               </section>
             } @else {
               <div
-                class="mx-auto grid w-56 grid-cols-2 gap-1 rounded-2xl bg-primary-soft p-1 md:col-start-1 md:mx-0 dark:bg-white/10"
+                class="mx-auto grid w-64 grid-cols-2 gap-1 rounded-full border border-line bg-sand p-1 md:col-start-1 md:mx-0"
                 role="group"
                 aria-label="Modo de mapa"
               >
@@ -264,7 +264,7 @@ interface ZoomState {
             }
 
             <p
-              class="px-1 pt-1 text-[12px] font-semibold text-muted md:col-span-2 dark:text-muted-dark"
+              class="px-1 pt-1 text-[12px] text-muted md:col-span-2"
             >
               Proyecto académico de apoyo a la rotación. No es un dispositivo médico.
             </p>
@@ -328,7 +328,9 @@ export class MapPage {
     const map = this.mapStore.map();
     if (!map) return 0;
     const cells = macroCells(map, macro);
-    return cells.length ? Math.min(100, Math.round(Math.min(...cells.map((c) => c.ratio)) * 100)) : 0;
+    return cells.length
+      ? Math.min(100, Math.round(Math.min(...cells.map((c) => c.ratio)) * 100))
+      : 0;
   }
 
   protected macroWord(macro: MacroCode): string {
@@ -345,24 +347,22 @@ export class MapPage {
 
   protected chipCls(): string {
     return (
-      'pressable focus-ring touch-target flex shrink-0 cursor-pointer items-center gap-2 ' +
-      'rounded-[20px] bg-primary-soft px-3 py-2 text-left text-[13px] dark:bg-white/10'
+      'pressable focus-ring touch-target flex shrink-0 cursor-pointer items-center gap-3 ' +
+      'rounded-full border border-line bg-card py-2 pl-2.5 pr-4 text-left text-[14px] hover:bg-sand'
     );
   }
 
-  protected tileCls(tone: 'sky' | 'mint' | 'lemon'): string {
-    const tones = {
-      sky: 'bg-sky text-sky-ink dark:bg-white/10 dark:text-[#a8c8f0]',
-      mint: 'bg-mint text-mint-ink dark:bg-white/10 dark:text-[#8fe0bd]',
-      lemon: 'bg-lemon text-lemon-ink dark:bg-white/10 dark:text-[#f2d478]',
-    } as const;
-    return `pressable focus-ring touch-target flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[22px] px-2 py-3 text-[13px] font-extrabold ${tones[tone]}`;
+  protected tileCls(): string {
+    return (
+      'pressable focus-ring touch-target flex cursor-pointer flex-col items-center justify-center ' +
+      'gap-2 rounded-3xl border border-line bg-card px-2 py-4 text-[13px] font-medium text-ink hover:bg-sand'
+    );
   }
 
   protected segCls(mode: MapView): string {
     const on = this.view() === mode;
-    return `touch-target focus-ring cursor-pointer rounded-xl text-[14px] font-extrabold ${
-      on ? 'bg-card shadow dark:bg-card-dark' : 'text-muted dark:text-muted-dark'
+    return `touch-target focus-ring cursor-pointer rounded-full px-4 py-2 text-[14px] font-medium transition-colors ${
+      on ? 'border border-line bg-card text-ink' : 'text-muted hover:text-ink'
     }`;
   }
 

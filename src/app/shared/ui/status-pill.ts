@@ -3,18 +3,9 @@ import { LucideCheck, LucideTriangleAlert, LucideX } from '@lucide/angular';
 import type { CellColor } from '../../core/data/types';
 
 const META: Record<CellColor, { word: string; classes: string }> = {
-  RED: {
-    word: 'En recuperación',
-    classes: 'bg-mz-red-soft text-mz-red dark:bg-white/10 dark:text-[#ff9d94]',
-  },
-  YELLOW: {
-    word: 'Casi lista',
-    classes: 'bg-mz-yellow-soft text-mz-yellow dark:bg-white/10 dark:text-[#f2d478]',
-  },
-  GREEN: {
-    word: 'Disponible',
-    classes: 'bg-mz-green-soft text-mz-green dark:bg-white/10 dark:text-[#8fe0bd]',
-  },
+  RED: { word: 'En recuperación', classes: 'bg-mz-red-soft text-mz-red' },
+  YELLOW: { word: 'Casi lista', classes: 'bg-mz-yellow-soft text-mz-yellow' },
+  GREEN: { word: 'Disponible', classes: 'bg-mz-green-soft text-mz-green' },
 };
 
 /** Estado con icono + palabra, nunca solo color (RNF-05). */
@@ -24,13 +15,13 @@ const META: Record<CellColor, { word: string; classes: string }> = {
   template: `
     @switch (color()) {
       @case ('RED') {
-        <svg lucideX [size]="14" [strokeWidth]="3" aria-hidden="true"></svg>
+        <svg lucideX [size]="13" [strokeWidth]="2.5" aria-hidden="true"></svg>
       }
       @case ('YELLOW') {
-        <svg lucideTriangleAlert [size]="14" [strokeWidth]="3" aria-hidden="true"></svg>
+        <svg lucideTriangleAlert [size]="13" [strokeWidth]="2.5" aria-hidden="true"></svg>
       }
       @default {
-        <svg lucideCheck [size]="14" [strokeWidth]="3" aria-hidden="true"></svg>
+        <svg lucideCheck [size]="13" [strokeWidth]="2.5" aria-hidden="true"></svg>
       }
     }
     {{ word() }}
@@ -44,7 +35,7 @@ export class UiPill {
 
   protected readonly cls = computed(
     () =>
-      'inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[13px] font-extrabold ' +
+      'inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium ' +
       META[this.color()].classes,
   );
 }

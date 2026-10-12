@@ -11,9 +11,13 @@ export type ExportFormat = 'pdf' | 'xlsx' | 'csv';
   selector: 'app-export-card',
   imports: [UiBtn, LucideFileDown],
   template: `
-    <section class="card p-4 sm:p-5">
-      <div class="flex items-center gap-2">
-        <div class="grid flex-1 grid-cols-3 gap-1" role="group" aria-label="Formato de exporte">
+    <section class="card p-5">
+      <div class="flex items-center gap-3">
+        <div
+          class="grid flex-1 grid-cols-3 gap-1 rounded-full border border-line bg-sand p-1"
+          role="group"
+          aria-label="Formato de exporte"
+        >
           @for (f of formats; track f) {
             <button
               type="button"
@@ -28,16 +32,16 @@ export type ExportFormat = 'pdf' | 'xlsx' | 'csv';
         <button
           uiBtn
           type="button"
-          [extraClass]="'shrink-0'"
+          [extraClass]="'shrink-0 py-3'"
           [disabled]="busy()"
           (click)="download()"
         >
-          <svg lucideFileDown [size]="18" aria-hidden="true"></svg>
+          <svg lucideFileDown [size]="17" aria-hidden="true"></svg>
           {{ busy() ? '…' : 'Exportar' }}
         </button>
       </div>
       @if (error(); as msg) {
-        <p role="alert" class="mt-2 text-[14px] font-bold text-mz-red">{{ msg }}</p>
+        <p role="alert" class="mt-2.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
       }
     </section>
   `,
@@ -55,10 +59,8 @@ export class ExportCard {
 
   protected fmtCls(f: ExportFormat): string {
     const on = this.format() === f;
-    return `touch-target focus-ring cursor-pointer rounded-2xl text-[14px] font-extrabold uppercase ${
-      on
-        ? 'bg-primary-soft text-primary-ink dark:bg-white/10 dark:text-primary-dark'
-        : 'text-muted dark:text-muted-dark'
+    return `touch-target focus-ring cursor-pointer rounded-full px-3 py-2 text-[13px] font-medium uppercase transition-colors ${
+      on ? 'border border-line bg-card text-ink' : 'text-muted hover:text-ink'
     }`;
   }
 

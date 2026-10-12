@@ -1,23 +1,23 @@
 import { Component, computed, input } from '@angular/core';
 
-export type BtnVariant = 'primary' | 'soft' | 'white' | 'danger-soft' | 'ghost' | 'pink';
+export type BtnVariant = 'primary' | 'outline' | 'soft' | 'ghost' | 'danger';
 
 const BASE =
-  'pressable focus-ring touch-target inline-flex cursor-pointer items-center justify-center gap-1.5 ' +
-  'rounded-2xl px-4 text-[16px] font-extrabold transition-colors disabled:pointer-events-none disabled:opacity-60';
+  'pressable focus-ring touch-target inline-flex cursor-pointer items-center justify-center gap-2 ' +
+  'rounded-full text-[15px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-50';
 
 const VARIANTS: Record<BtnVariant, string> = {
   primary: 'bg-primary text-white hover:bg-primary-strong',
-  soft: 'bg-primary-soft text-primary-ink hover:bg-primary-soft/70 dark:bg-white/10 dark:text-primary-dark',
-  white: 'bg-white text-primary-ink hover:bg-primary-soft dark:bg-white/10 dark:text-primary-dark',
-  'danger-soft': 'bg-mz-red-soft text-mz-red dark:bg-white/10 dark:text-[#ff9d94]',
-  ghost: 'text-primary hover:bg-primary-soft/60 dark:text-primary-dark dark:hover:bg-white/10',
-  pink: 'bg-pink text-pink-ink hover:bg-pink/80',
+  outline: 'border border-line bg-card text-ink hover:bg-sand',
+  soft: 'bg-sand text-ink hover:bg-sand-deep',
+  ghost: 'text-ink hover:bg-sand',
+  danger: 'bg-mz-red-soft text-mz-red hover:bg-mz-red-soft/70',
 };
 
 /**
- * Botón/enlace con las variantes pastel del sistema.
+ * Botón/enlace con las variantes del sistema (píldora, negro cálido).
  * Uso: `<button uiBtn variant="soft" [extraClass]="'w-full'">…</button>`
+ * Icono solo: `<button uiBtn [icon]="true" aria-label="…"><svg …/></button>`
  */
 @Component({
   selector: 'button[uiBtn], a[uiBtn]',
@@ -26,9 +26,11 @@ const VARIANTS: Record<BtnVariant, string> = {
 })
 export class UiBtn {
   readonly variant = input<BtnVariant>('primary');
+  readonly icon = input<boolean>(false);
   readonly extraClass = input<string>('');
 
-  protected readonly cls = computed(
-    () => `${BASE} ${VARIANTS[this.variant()]} ${this.extraClass()}`,
-  );
+  protected readonly cls = computed(() => {
+    const size = this.icon() ? 'h-11 w-11 p-0' : 'px-5';
+    return `${BASE} ${size} ${VARIANTS[this.variant()]} ${this.extraClass()}`;
+  });
 }
