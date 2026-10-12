@@ -9,11 +9,11 @@
     sans-serif;
 
   /* --- Superficies cálidas --- */
-  --color-app-bg: #faf5ee;
+  --color-app-bg: #fbf8f5;
   --color-card: #ffffff;
-  --color-sand: #f3eadf;
-  --color-sand-deep: #eadcc8;
-  --color-line: #ebe2d5;
+  --color-sand: #f2ede6;
+  --color-sand-deep: #e7ded2;
+  --color-line: #e9e1d6;
 
   /* --- Tinta cálida --- */
   --color-ink: #1f1a14;
@@ -23,13 +23,20 @@
 
   /* --- Acentos tierra (hims: amber / peru / olive) --- */
   --color-honey: #f9b859;
+  --color-honey-deep: #eda73f;
   --color-honey-soft: #fcefd9;
   --color-clay: #b98267;
   --color-clay-soft: #f4e4dc;
   --color-olive: #9c702f;
   --color-olive-soft: #f1e8d5;
 
-  /* --- CTA: negro cálido en píldora --- */
+  /* --- Marrón oscuro (secciones y tarjetas destacadas de la referencia) --- */
+  --color-cocoa: #3e2e22;
+  --color-cocoa-soft: #5a4530;
+  --color-caramel: #a97c3f;
+  --color-cream: #f7f2ea;
+
+  /* --- CTA principal: ámbar con tinta oscura --- */
   --color-primary: #1f1a14;
   --color-primary-strong: #000000;
   --color-ring: #b98267;

@@ -49,8 +49,6 @@ interface ZoomState {
   ],
   template: `
     <app-shell
-      [title]="detail()?.name ?? userName()"
-      greeting="Hola,"
       [userName]="userName()"
       [tabs]="tabs"
       active="pacientes"
@@ -59,7 +57,7 @@ interface ZoomState {
       <main class="page-enter">
         @if (detail(); as sel) {
           <!-- P11: detalle del paciente (solo lectura) -->
-          <div class="px-5 pt-1 lg:px-0">
+          <div>
             <div class="flex items-center gap-3">
               <button
                 uiBtn
@@ -181,7 +179,10 @@ interface ZoomState {
           </div>
         } @else {
           <!-- P10: lista de pacientes -->
-          <div class="space-y-3 px-5 pt-1 lg:px-0">
+          <div class="space-y-3">
+            <h1 class="text-[32px] font-normal tracking-[-0.02em] text-ink-strong sm:text-[40px]">
+              Tus pacientes
+            </h1>
             <section class="card p-5" aria-label="Agregar paciente">
               <h2 class="flex items-center gap-2 text-[17px] text-ink-strong">
                 <svg lucideLink2 [size]="17" aria-hidden="true"></svg>

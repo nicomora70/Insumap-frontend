@@ -13,8 +13,12 @@ import { ActivatedRoute } from '@angular/router';
   selector: 'app-assistant-page',
   imports: [AppShell, UiBtn, LucideSendHorizontal, LucideTriangleAlert],
   template: `
-    <app-shell greeting="Hola," [title]="userName()" [userName]="userName()" [tabs]="tabs" active="ayuda">
-      <main class="page-enter flex min-h-[70svh] flex-col px-5 pb-32 pt-1 lg:px-0 lg:pb-10">
+    <app-shell [userName]="userName()" [tabs]="tabs" active="ayuda">
+      <main class="page-enter flex min-h-[70svh] flex-col pb-10">
+        <h1 class="text-[32px] font-normal tracking-[-0.02em] text-ink-strong sm:text-[40px]">
+          Asistente
+        </h1>
+        <div class="mt-4"></div>
         @if (store.degraded()) {
           <p
             class="mb-3 flex items-start gap-2.5 rounded-2xl bg-honey-soft px-4 py-3 text-[13px] font-medium text-olive"

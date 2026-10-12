@@ -10,14 +10,11 @@ import { HistoryList } from '../history/history-list';
   selector: 'app-history-page',
   imports: [AppShell, ExportCard, HistoryList],
   template: `
-    <app-shell
-      [title]="userName()"
-      greeting="Hola,"
-      [userName]="userName()"
-      [tabs]="tabs"
-      active="historial"
-    >
-      <main class="page-enter space-y-3 px-5 pt-1 lg:px-0">
+    <app-shell [userName]="userName()" [tabs]="tabs" active="historial">
+      <main class="page-enter space-y-4">
+        <h1 class="text-[32px] font-normal tracking-[-0.02em] text-ink-strong sm:text-[40px]">
+          Tu historial
+        </h1>
         <app-export-card basePath="/history" filename="insumap-historial" />
         <app-history-list [patientId]="null" />
       </main>

@@ -1,13 +1,14 @@
 import { Component, computed, input } from '@angular/core';
 
-export type BtnVariant = 'primary' | 'outline' | 'soft' | 'ghost' | 'danger';
+export type BtnVariant = 'primary' | 'dark' | 'outline' | 'soft' | 'ghost' | 'danger';
 
 const BASE =
   'pressable focus-ring touch-target inline-flex cursor-pointer items-center justify-center gap-2 ' +
   'rounded-full text-[15px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-50';
 
 const VARIANTS: Record<BtnVariant, string> = {
-  primary: 'bg-primary text-white hover:bg-primary-strong',
+  primary: 'bg-honey text-ink-strong hover:bg-honey-deep',
+  dark: 'bg-primary text-white hover:bg-primary-strong',
   outline: 'border border-line bg-card text-ink hover:bg-sand',
   soft: 'bg-sand text-ink hover:bg-sand-deep',
   ghost: 'text-ink hover:bg-sand',
@@ -15,7 +16,7 @@ const VARIANTS: Record<BtnVariant, string> = {
 };
 
 /**
- * Botón/enlace con las variantes del sistema (píldora, negro cálido).
+ * Botón/enlace con las variantes del sistema (píldora).
  * Uso: `<button uiBtn variant="soft" [extraClass]="'w-full'">…</button>`
  * Icono solo: `<button uiBtn [icon]="true" aria-label="…"><svg …/></button>`
  */

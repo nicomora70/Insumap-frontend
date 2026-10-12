@@ -13,14 +13,15 @@ import { UiBtn } from '../../shared/ui/button';
   imports: [AppShell, UiAvatar, UiBtn, LucideLogOut],
   template: `
     <app-shell
-      [title]="userName()"
-      greeting="Hola,"
       [userName]="userName()"
       [tabs]="tabs"
       active="perfil"
       profileRoute="/cuenta"
     >
-      <main class="page-enter space-y-3 px-5 pt-1 lg:px-0">
+      <main class="page-enter space-y-3">
+        <h1 class="text-[32px] font-normal tracking-[-0.02em] text-ink-strong sm:text-[40px]">
+          Tu cuenta
+        </h1>
         <section class="card flex items-center gap-4 p-5" aria-label="Tu cuenta">
           <ui-avatar [name]="userName()" [size]="56" />
           <div class="min-w-0">

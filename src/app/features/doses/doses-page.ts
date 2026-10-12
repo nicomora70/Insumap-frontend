@@ -148,14 +148,11 @@ export class ReminderCard {
     LucideCheck,
   ],
   template: `
-    <app-shell
-      [title]="userName()"
-      greeting="Hola,"
-      [userName]="userName()"
-      [tabs]="tabs"
-      active="dosis"
-    >
-      <main class="page-enter space-y-4 px-5 pb-32 pt-1 lg:px-0 lg:pb-10">
+    <app-shell [userName]="userName()" [tabs]="tabs" active="dosis">
+      <main class="page-enter space-y-4 pb-10">
+        <h1 class="text-[32px] font-normal tracking-[-0.02em] text-ink-strong sm:text-[40px]">
+          Tus dosis
+        </h1>
         <!-- Cronograma -->
         <section class="card p-5" aria-label="Cronograma de dosis">
           <h2 class="flex items-center gap-2 text-[17px] text-ink-strong">
