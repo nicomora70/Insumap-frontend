@@ -15,19 +15,28 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type { CellColor, MapResponse } from '../../core/data/types';
-import { MACROS, macroCells, macroTint, worstColor } from '../../core/util/body';
+import { MACROS, macroCells, worstColor } from '../../core/util/body';
 import type { MacroCode } from '../../core/util/body';
 
-const NEUTRAL = '#e9dcc9';
-const PLUM = '#2a2118';
-const CHEEK = '#e8a98f';
+/* Materiales del maniquí anatómico */
+const SKIN = '#c9c9c9';
+const SKIN_ROUGH = 0.42;
+const SHORTS = '#2c2c2c';
+const HAIR = '#3a3a3a';
 
-/** Posición de la etiqueta flotante de cada zona (sobre el maniquí kawaii). */
+/** Tinte de músculo por estado: verde = cuerpo neutro, amarillo/rojo resaltan. */
+const MUSCLE_TINT: Record<CellColor, string> = {
+  RED: '#c9583f',
+  YELLOW: '#dfa63e',
+  GREEN: SKIN,
+};
+
+/** Posición de la etiqueta flotante de cada zona. */
 const ZONE_BADGE: Record<MacroCode, [number, number, number]> = {
-  ABD: [0.46, 1.6, 0.22],
-  MUS: [0.52, 0.8, 0.2],
-  BRA: [0.8, 1.9, 0],
-  GLU: [-0.52, 1.14, -0.34],
+  ABD: [0.38, 1.5, 0.18],
+  MUS: [0.42, 0.85, 0.16],
+  BRA: [0.62, 1.67, 0],
+  GLU: [-0.38, 1.1, -0.32],
 };
 
 const STATUS_SHORT: Record<CellColor, string> = {
@@ -43,27 +52,25 @@ const LABEL_CLASS: Record<CellColor, string> = {
 };
 
 /**
- * Maniquí 3D kawaii por primitivas: rotable, zonas tocables, sin assets externos.
- * Portado de React Three Fiber a three.js puro.
+ * Maniquí anatómico 3D (estilo modelo médico): cuerpo gris con shorts,
+ * zonas musculares resaltables por recuperación y rotable con OrbitControls.
  */
 @Component({
   selector: 'app-body3d',
   imports: [LucideX, LucideTriangleAlert, LucideCheck, LucideStar],
   template: `
     <div
-      class="relative h-[420px] w-full sm:h-[480px]"
+      class="relative h-[460px] w-full sm:h-[520px]"
       aria-label="Cuerpo 3D: arrastra para girar, toca una zona para ver su cuadrícula"
     >
       @if (!ready()) {
         <div class="absolute inset-0 flex items-center justify-center">
-          <p class="animate-pulse text-[14px] font-medium text-muted">
-            Cargando cuerpo…
-          </p>
+          <p class="animate-pulse text-[14px] font-medium text-muted">Cargando cuerpo…</p>
         </div>
       }
       <div
         aria-hidden="true"
-        class="pointer-events-none absolute bottom-8 left-1/2 h-10 w-60 -translate-x-1/2 rounded-full bg-ink/10 blur-lg"
+        class="pointer-events-none absolute bottom-10 left-1/2 h-12 w-56 -translate-x-1/2 rounded-[50%] bg-ink/10 blur-xl"
       ></div>
       <canvas #canvasRef class="relative h-full w-full touch-none"></canvas>
 
@@ -74,21 +81,19 @@ const LABEL_CLASS: Record<CellColor, string> = {
           [class]="labelClass(macro)"
         >
           @if (suggestionMacro() === macro) {
-            <svg lucideStar [size]="12" [strokeWidth]="3" aria-hidden="true" class="mr-0.5 inline"></svg>
+            <svg lucideStar [size]="12" [strokeWidth]="2.4" aria-hidden="true" class="mr-0.5 inline"></svg>
           } @else if (labelColor(macro) === 'RED') {
-            <svg lucideX [size]="12" [strokeWidth]="3" aria-hidden="true" class="mr-0.5 inline"></svg>
+            <svg lucideX [size]="12" [strokeWidth]="2.4" aria-hidden="true" class="mr-0.5 inline"></svg>
           } @else if (labelColor(macro) === 'YELLOW') {
-            <svg lucideTriangleAlert [size]="12" [strokeWidth]="3" aria-hidden="true" class="mr-0.5 inline"></svg>
+            <svg lucideTriangleAlert [size]="12" [strokeWidth]="2.4" aria-hidden="true" class="mr-0.5 inline"></svg>
           } @else {
-            <svg lucideCheck [size]="12" [strokeWidth]="3" aria-hidden="true" class="mr-0.5 inline"></svg>
+            <svg lucideCheck [size]="12" [strokeWidth]="2.4" aria-hidden="true" class="mr-0.5 inline"></svg>
           }
           {{ labelText(macro) }}
         </span>
       }
 
-      <p
-        class="pointer-events-none absolute inset-x-0 bottom-1 text-center text-[12px] font-medium text-muted"
-      >
+      <p class="pointer-events-none absolute inset-x-0 bottom-1 text-center text-[12px] font-medium text-muted">
         Arrastra para girar · toca una zona
       </p>
     </div>
@@ -120,6 +125,7 @@ export class Body3D implements AfterViewInit, OnDestroy {
   constructor() {
     effect(() => {
       const map = this.map();
+      this.suggestionMacro();
       if (map && this.renderer) this.applyMap(map);
     });
   }
@@ -180,30 +186,33 @@ export class Body3D implements AfterViewInit, OnDestroy {
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
-      28,
+      30,
       parent.clientWidth / Math.max(parent.clientHeight, 1),
       0.1,
       100,
     );
-    this.camera.position.set(0, 1.55, 5.1);
+    this.camera.position.set(0, 1.55, 4.9);
 
     this.controls = new OrbitControls(this.camera, canvas);
-    this.controls.target.set(0, 1.45, 0);
+    this.controls.target.set(0, 1.32, 0);
     this.controls.enablePan = false;
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
-    this.controls.minDistance = 3.2;
+    this.controls.minDistance = 2.6;
     this.controls.maxDistance = 7;
-    this.controls.minPolarAngle = 0.9;
-    this.controls.maxPolarAngle = 2.1;
+    this.controls.minPolarAngle = 0.8;
+    this.controls.maxPolarAngle = 2.2;
 
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-    const key = new THREE.DirectionalLight(0xffffff, 1.15);
-    key.position.set(4, 6, 5);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+    const key = new THREE.DirectionalLight(0xffffff, 1.5);
+    key.position.set(3.5, 6, 4.5);
     this.scene.add(key);
-    const fill = new THREE.DirectionalLight(0xd9c9f5, 0.45);
-    fill.position.set(-5, 4, -4);
+    const fill = new THREE.DirectionalLight(0xe8dccb, 0.5);
+    fill.position.set(-5, 3.5, -3);
     this.scene.add(fill);
+    const rim = new THREE.DirectionalLight(0xffffff, 0.35);
+    rim.position.set(0, 4, -6);
+    this.scene.add(rim);
 
     this.buildBody();
 
@@ -216,14 +225,21 @@ export class Body3D implements AfterViewInit, OnDestroy {
     canvas.addEventListener('pointermove', this.onPointerMove);
   }
 
-  private mat(color: string): THREE.MeshStandardMaterial {
-    return new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: 0.55 });
+  private skinMaterial(): THREE.MeshStandardMaterial {
+    return new THREE.MeshStandardMaterial({
+      color: new THREE.Color(SKIN),
+      roughness: SKIN_ROUGH,
+      metalness: 0.08,
+    });
+  }
+
+  private plainMaterial(color: string, roughness: number): THREE.MeshStandardMaterial {
+    return new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness });
   }
 
   private buildBody(): void {
     const scene = this.scene!;
     const group = new THREE.Group();
-    group.position.set(0, -0.06, 0);
     scene.add(group);
 
     const add = (mesh: THREE.Mesh, parent: THREE.Object3D = group): THREE.Mesh => {
@@ -231,71 +247,89 @@ export class Body3D implements AfterViewInit, OnDestroy {
       return mesh;
     };
 
-    // Cabeza + carita kawaii
-    add(new THREE.Mesh(new THREE.SphereGeometry(0.3, 40, 40), this.mat(NEUTRAL))).position.set(0, 2.66, 0);
-    add(new THREE.Mesh(new THREE.SphereGeometry(0.032, 16, 16), this.mat(PLUM))).position.set(-0.09, 2.72, 0.27);
-    add(new THREE.Mesh(new THREE.SphereGeometry(0.032, 16, 16), this.mat(PLUM))).position.set(0.09, 2.72, 0.27);
-    const cheekL = add(new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 16), this.mat(CHEEK)));
-    cheekL.position.set(-0.19, 2.58, 0.24);
-    cheekL.scale.set(1, 0.7, 0.35);
-    const cheekR = add(new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 16), this.mat(CHEEK)));
-    cheekR.position.set(0.19, 2.58, 0.24);
-    cheekR.scale.set(1, 0.7, 0.35);
-
-    // Cuello
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.11, 0.16, 24), this.mat(NEUTRAL))).position.set(0, 2.32, 0);
-
-    // Pecho
-    add(
-      new THREE.Mesh(new RoundedBoxGeometry(0.68, 0.52, 0.36, 4, 0.16), this.mat(NEUTRAL)),
-    ).position.set(0, 2.0, 0);
-
-    // Abdomen (ABD)
-    const abd = add(
-      new THREE.Mesh(new RoundedBoxGeometry(0.58, 0.48, 0.34, 4, 0.15), this.mat(NEUTRAL)),
-    );
-    abd.position.set(0, 1.56, 0);
-    this.registerZone('ABD', abd);
-
-    // Cadera
-    add(
-      new THREE.Mesh(new RoundedBoxGeometry(0.64, 0.36, 0.36, 4, 0.15), this.mat(NEUTRAL)),
-    ).position.set(0, 1.18, 0);
-
-    // Glúteos (GLU)
-    const gluA = add(new THREE.Mesh(new THREE.SphereGeometry(0.18, 28, 28), this.mat(NEUTRAL)));
-    gluA.position.set(-0.15, 1.16, -0.16);
-    const gluB = add(new THREE.Mesh(new THREE.SphereGeometry(0.18, 28, 28), this.mat(NEUTRAL)));
-    gluB.position.set(0.15, 1.16, -0.16);
-    this.registerZone('GLU', gluA, gluB);
-
-    // Hombros
-    add(new THREE.Mesh(new THREE.SphereGeometry(0.13, 24, 24), this.mat(NEUTRAL))).position.set(-0.44, 2.14, 0);
-    add(new THREE.Mesh(new THREE.SphereGeometry(0.13, 24, 24), this.mat(NEUTRAL))).position.set(0.44, 2.14, 0);
-
-    // Brazos: brazo superior (BRA) + antebrazo + manos
-    const braA = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.3, 6, 20), this.mat(NEUTRAL)));
-    braA.position.set(-0.47, 1.86, 0);
-    const braB = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.3, 6, 20), this.mat(NEUTRAL)));
-    braB.position.set(0.47, 1.86, 0);
-    this.registerZone('BRA', braA, braB);
-    add(new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.28, 6, 20), this.mat(NEUTRAL))).position.set(-0.5, 1.44, 0);
-    add(new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.28, 6, 20), this.mat(NEUTRAL))).position.set(0.5, 1.44, 0);
-    add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 20, 20), this.mat(NEUTRAL))).position.set(-0.51, 1.14, 0);
-    add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 20, 20), this.mat(NEUTRAL))).position.set(0.51, 1.14, 0);
-
-    // Muslos (MUS)
-    const musA = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.4, 6, 24), this.mat(NEUTRAL)));
-    musA.position.set(-0.17, 0.84, 0);
-    const musB = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.4, 6, 24), this.mat(NEUTRAL)));
-    musB.position.set(0.17, 0.84, 0);
+    /* ------- Piernas ------- */
+    // Pies
+    for (const x of [-0.13, 0.13]) {
+      const foot = add(new THREE.Mesh(new RoundedBoxGeometry(0.15, 0.07, 0.3, 4, 0.03), this.skinMaterial()));
+      foot.position.set(x, 0.035, 0.05);
+    }
+    // Pantorrillas
+    for (const x of [-0.13, 0.13]) {
+      add(new THREE.Mesh(new THREE.CapsuleGeometry(0.085, 0.3, 8, 24), this.skinMaterial())).position.set(x, 0.34, 0);
+    }
+    // Rodillas
+    for (const x of [-0.13, 0.13]) {
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.095, 24, 24), this.skinMaterial())).position.set(x, 0.63, 0);
+    }
+    // Muslos (zona MUS)
+    const musA = add(new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.09, 0.4, 28), this.skinMaterial()));
+    musA.position.set(-0.135, 0.86, 0);
+    const musB = add(new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.09, 0.4, 28), this.skinMaterial()));
+    musB.position.set(0.135, 0.86, 0);
     this.registerZone('MUS', musA, musB);
 
-    // Pantorrillas + pies
-    add(new THREE.Mesh(new THREE.CapsuleGeometry(0.115, 0.36, 6, 20), this.mat(NEUTRAL))).position.set(-0.16, 0.33, 0);
-    add(new THREE.Mesh(new THREE.CapsuleGeometry(0.115, 0.36, 6, 20), this.mat(NEUTRAL))).position.set(0.16, 0.33, 0);
-    add(new THREE.Mesh(new RoundedBoxGeometry(0.17, 0.09, 0.3, 4, 0.045), this.mat(NEUTRAL))).position.set(-0.16, 0.045, 0.05);
-    add(new THREE.Mesh(new RoundedBoxGeometry(0.17, 0.09, 0.3, 4, 0.045), this.mat(NEUTRAL))).position.set(0.16, 0.045, 0.05);
+    /* ------- Shorts (oscuros, estilo referencia) ------- */
+    for (const x of [-0.135, 0.135]) {
+      const cuff = add(new THREE.Mesh(new THREE.CylinderGeometry(0.135, 0.13, 0.16, 28), this.plainMaterial(SHORTS, 0.8)));
+      cuff.position.set(x, 1.1, 0);
+    }
+    const pelvis = add(new THREE.Mesh(new RoundedBoxGeometry(0.42, 0.3, 0.3, 4, 0.1), this.plainMaterial(SHORTS, 0.8)));
+    pelvis.position.set(0, 1.22, 0);
+
+    // Glúteos (zona GLU) — sobresalen detrás del shorts
+    const gluA = add(new THREE.Mesh(new THREE.SphereGeometry(0.115, 26, 26), this.skinMaterial()));
+    gluA.position.set(-0.11, 1.22, -0.17);
+    const gluB = add(new THREE.Mesh(new THREE.SphereGeometry(0.115, 26, 26), this.skinMaterial()));
+    gluB.position.set(0.11, 1.22, -0.17);
+    this.registerZone('GLU', gluA, gluB);
+
+    /* ------- Torso ------- */
+    // Abdomen (zona ABD)
+    const abd = add(new THREE.Mesh(new RoundedBoxGeometry(0.36, 0.3, 0.24, 4, 0.1), this.skinMaterial()));
+    abd.position.set(0, 1.5, 0);
+    this.registerZone('ABD', abd);
+
+    // Pecho + pectorales (placas planas, lectura masculina)
+    const chest = add(new THREE.Mesh(new RoundedBoxGeometry(0.5, 0.3, 0.28, 4, 0.12), this.skinMaterial()));
+    chest.position.set(0, 1.78, 0);
+    for (const x of [-0.12, 0.12]) {
+      const pec = add(new THREE.Mesh(new RoundedBoxGeometry(0.19, 0.13, 0.06, 3, 0.03), this.skinMaterial()));
+      pec.position.set(x, 1.8, 0.135);
+    }
+
+    /* ------- Brazos ------- */
+    // Deltoides
+    for (const x of [-0.31, 0.31]) {
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.11, 26, 26), this.skinMaterial())).position.set(x, 1.9, 0);
+    }
+    // Brazo superior (zona BRA)
+    const braA = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.24, 8, 22), this.skinMaterial()));
+    braA.position.set(-0.33, 1.67, 0);
+    const braB = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.24, 8, 22), this.skinMaterial()));
+    braB.position.set(0.33, 1.67, 0);
+    this.registerZone('BRA', braA, braB);
+    // Antebrazos
+    for (const x of [-0.35, 0.35]) {
+      add(new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.24, 8, 20), this.skinMaterial())).position.set(x, 1.36, 0);
+    }
+    // Manos
+    for (const x of [-0.36, 0.36]) {
+      const hand = add(new THREE.Mesh(new RoundedBoxGeometry(0.08, 0.14, 0.05, 3, 0.02), this.skinMaterial()));
+      hand.position.set(x, 1.16, 0);
+    }
+
+    /* ------- Cabeza ------- */
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.14, 24), this.skinMaterial())).position.set(0, 2.02, 0);
+    const head = add(new THREE.Mesh(new THREE.SphereGeometry(0.15, 36, 36), this.skinMaterial()));
+    head.position.set(0, 2.22, 0);
+    head.scale.set(0.92, 1.08, 0.98);
+    // Cabello
+    const hair = add(new THREE.Mesh(new THREE.SphereGeometry(0.155, 36, 36), this.plainMaterial(HAIR, 0.65)));
+    hair.position.set(0, 2.27, -0.01);
+    hair.scale.set(0.98, 0.78, 1.0);
+    const nape = add(new THREE.Mesh(new THREE.SphereGeometry(0.12, 28, 28), this.plainMaterial(HAIR, 0.65)));
+    nape.position.set(0, 2.2, -0.08);
+    nape.scale.set(0.95, 0.9, 0.75);
   }
 
   private registerZone(macro: MacroCode, ...meshes: THREE.Mesh[]): void {
@@ -308,10 +342,24 @@ export class Body3D implements AfterViewInit, OnDestroy {
     this.zoneMaterials[macro] = materials;
   }
 
+  /** Verde sano = cuerpo neutro; la sugerida se resalta aunque esté sana. */
   private applyMap(map: MapResponse): void {
+    const suggested = this.suggestionMacro();
     for (const macro of MACROS) {
-      const tint = new THREE.Color(macroTint(map, macro));
-      for (const material of this.zoneMaterials[macro] ?? []) material.color.copy(tint);
+      const color = worstColor(macroCells(map, macro));
+      const isSuggested = suggested === macro;
+      const tintHex = color === 'GREEN' ? (isSuggested ? '#9db894' : SKIN) : MUSCLE_TINT[color];
+      const tint = new THREE.Color(tintHex);
+      for (const material of this.zoneMaterials[macro] ?? []) {
+        material.color.copy(tint);
+        if (isSuggested) {
+          material.emissive.copy(tint);
+          material.emissiveIntensity = 0.32;
+        } else {
+          material.emissive.setRGB(0, 0, 0);
+          material.emissiveIntensity = 0;
+        }
+      }
     }
   }
 
