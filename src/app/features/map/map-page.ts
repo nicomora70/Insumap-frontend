@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { LucideChevronRight } from '@lucide/angular';
 import { AuthService } from '../../core/auth/auth.service';
 import { MapStore } from '../../core/data/map.store';
@@ -41,7 +41,7 @@ interface ZoomState {
 /** P04: inicio del paciente con la composición editorial de la referencia. */
 @Component({
   selector: 'app-map-page',
-  imports: [AppShell, UiBtn, RouterLink, Body3D, ZoomGrid, MacroGrid, MicrozoneSheet, LucideChevronRight],
+  imports: [AppShell, UiBtn, Body3D, ZoomGrid, MacroGrid, MicrozoneSheet, LucideChevronRight],
   template: `
     <app-shell [userName]="userName()" [tabs]="tabs" active="mapa">
       <main class="page-enter">
@@ -105,28 +105,8 @@ interface ZoomState {
             </button>
           </div>
 
-          <!-- Tarjetas-tab de navegación -->
-          <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <a routerLink="/historial" [class]="tabCard">
-              Historial
-              <svg lucideChevronRight [size]="18" class="text-muted" aria-hidden="true"></svg>
-            </a>
-            <a routerLink="/dosis" [class]="tabCard">
-              Mis dosis
-              <svg lucideChevronRight [size]="18" class="text-muted" aria-hidden="true"></svg>
-            </a>
-            <a routerLink="/ayuda" [class]="tabCard">
-              Asistente
-              <svg lucideChevronRight [size]="18" class="text-muted" aria-hidden="true"></svg>
-            </a>
-            <a routerLink="/perfil" [class]="tabCard">
-              Tu cuenta
-              <svg lucideChevronRight [size]="18" class="text-muted" aria-hidden="true"></svg>
-            </a>
-          </div>
-
           <!-- Tarjetas-tab de macrozonas -->
-          <div class="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
             @for (macro of macros; track macro) {
               <button type="button" (click)="openMacro(macro)" [class]="tabCard">
                 <span class="flex flex-col gap-0.5">
