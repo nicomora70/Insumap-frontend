@@ -13,12 +13,16 @@ import {
 import { LucideCheck, LucideStar, LucideTriangleAlert, LucideX } from '@lucide/angular';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'meshoptimizer';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { CellColor, MapResponse } from '../../core/data/types';
 import { MACROS, macroCells, worstColor } from '../../core/util/body';
 import type { MacroCode } from '../../core/util/body';
 
-/** Modelo anatómico real (CC0, Grab3D) servido desde /models. */
+/**
+ * Modelo anatómico real (CC0, Grab3D) servido desde /models.
+ * Comprimido con `gltfpack -cc` (EXT_meshopt_compression): 9.4 MB → 1.8 MB.
+ */
 const MODEL_URL = 'models/human-muscles.glb';
 
 /** Altura normalizada del modelo en unidades de escena. */
@@ -294,7 +298,9 @@ export class Body3D implements AfterViewInit, OnDestroy {
 
   private async loadBody(): Promise<void> {
     try {
-      const gltf = await new GLTFLoader().loadAsync(MODEL_URL);
+      const loader = new GLTFLoader();
+      loader.setMeshoptDecoder(MeshoptDecoder);
+      const gltf = await loader.loadAsync(MODEL_URL);
       const root = gltf.scene;
 
       // Normalizar: altura fija, pies en y=0, centrado en x/z.
