@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   OnDestroy,
+  effect,
   input,
   output,
   signal,
@@ -23,6 +24,72 @@ const MODEL_URL = 'models/human-muscles.glb';
 /** Altura normalizada del modelo en unidades de escena. */
 const NORM_HEIGHT = 1.9;
 
+/** Color de estado en lineal, listo para mezclar en el shader. */
+function srgb(hex: string): [number, number, number] {
+  const c = new THREE.Color(hex).convertSRGBToLinear();
+  return [c.r, c.g, c.b];
+}
+
+/**
+ * Velo de color sobre la textura original. La fuerza es la mezcla en el centro
+ * de la zona (0 = modelo intacto, 1 = color plano); el borde se funde a 0.
+ */
+const ZONE_WASH: Record<CellColor, { color: [number, number, number]; strength: number }> = {
+  RED: { color: srgb('#d64545'), strength: 0.66 },
+  YELLOW: { color: srgb('#f0c14a'), strength: 0.7 },
+  GREEN: { color: srgb('#5eae78'), strength: 0.58 },
+};
+const SUGGESTED_WASH = { color: srgb('#2fbf64'), strength: 0.68 };
+
+interface ZonePaint {
+  tint: THREE.BufferAttribute;
+  weight: THREE.BufferAttribute;
+  zone: Uint8Array;
+  blend: Float32Array;
+}
+
+/** Mezcla el color de zona en el shader sin reemplazar la textura del músculo. */
+function patchZoneWash(material: THREE.Material): void {
+  const std = material as THREE.MeshStandardMaterial;
+  std.customProgramCacheKey = () => 'insumap-zone-wash';
+  std.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+attribute vec3 zoneTint;
+attribute float zoneWeight;
+varying vec3 vZoneTint;
+varying float vZoneWeight;`,
+      )
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+vZoneTint = zoneTint;
+vZoneWeight = zoneWeight;`,
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+varying vec3 vZoneTint;
+varying float vZoneWeight;`,
+      )
+      .replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+{
+  float w = clamp(vZoneWeight, 0.0, 1.0);
+  float origL = dot(diffuseColor.rgb, vec3(0.30, 0.59, 0.11));
+  float shade = clamp(origL / 0.22, 0.62, 1.32);
+  vec3 washed = vZoneTint * mix(1.0, shade, 0.85);
+  diffuseColor.rgb = mix(diffuseColor.rgb, washed, w);
+}`,
+      );
+  };
+  std.needsUpdate = true;
+}
+
 /** Posición de la etiqueta flotante de cada zona (espacio normalizado). */
 const ZONE_BADGE: Record<MacroCode, [number, number, number]> = {
   ABD: [0.38, 1.16, 0.14],
@@ -39,6 +106,8 @@ const REGION_ANCHOR: Record<MacroCode, [number, number, number]> = {
   GLU: [0, 0.48, -0.12],
 };
 
+const ZONE_INDEX: Record<MacroCode, number> = { ABD: 1, BRA: 2, MUS: 3, GLU: 4 };
+
 const STATUS_SHORT: Record<CellColor, string> = {
   RED: 'Recuperando',
   YELLOW: 'Casi lista',
@@ -52,8 +121,8 @@ const LABEL_CLASS: Record<CellColor, string> = {
 };
 
 /**
- * Modelo anatómico 3D real (malla CC0 de Grab3D) en su aspecto original;
- * las zonas se detectan al tocar para abrir su cuadrícula.
+ * Modelo anatómico 3D real (malla CC0 de Grab3D). Cada zona inyectable lleva
+ * un velo suave del color de su estado, sin tapar la textura del músculo.
  */
 @Component({
   selector: 'app-body3d',
@@ -120,10 +189,19 @@ export class Body3D implements AfterViewInit, OnDestroy {
   private raf = 0;
   private bodyGroup = new THREE.Group();
   private pickMeshes: THREE.Mesh[] = [];
+  private paints: ZonePaint[] = [];
   private downX = 0;
   private downY = 0;
   private readonly raycaster = new THREE.Raycaster();
   private readonly ndc = new THREE.Vector2();
+
+  constructor() {
+    effect(() => {
+      const map = this.map();
+      this.suggestionMacro();
+      if (map && this.paints.length > 0) this.applyMap(map);
+    });
+  }
 
   ngAfterViewInit(): void {
     this.initScene();
@@ -197,14 +275,14 @@ export class Body3D implements AfterViewInit, OnDestroy {
     this.controls.minPolarAngle = 0.85;
     this.controls.maxPolarAngle = 2.15;
 
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+    this.scene.add(new THREE.AmbientLight(0xffffff, 1.1));
     const key = new THREE.DirectionalLight(0xffffff, 2.2);
     key.position.set(2.5, 4, 3.5);
     this.scene.add(key);
-    const fill = new THREE.DirectionalLight(0xe8dccb, 0.65);
+    const fill = new THREE.DirectionalLight(0xe8dccb, 0.8);
     fill.position.set(-3.5, 2.5, -2.5);
     this.scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.55);
+    const rim = new THREE.DirectionalLight(0xffffff, 0.7);
     rim.position.set(0, 3, -4);
     this.scene.add(rim);
 
@@ -236,11 +314,34 @@ export class Body3D implements AfterViewInit, OnDestroy {
       this.scene!.add(this.bodyGroup);
       this.bodyGroup.updateMatrixWorld(true);
 
-      // Registrar la malla para el raycast (las zonas se detectan por posición).
+      // Velo de color por vértice: la textura original se conserva.
       root.traverse((obj) => {
-        if (obj instanceof THREE.Mesh) this.pickMeshes.push(obj);
+        if (!(obj instanceof THREE.Mesh)) return;
+        const geometry = obj.geometry as THREE.BufferGeometry;
+        const position = geometry.getAttribute('position') as THREE.BufferAttribute;
+        const count = position.count;
+        const zones = new Uint8Array(count);
+        const blend = new Float32Array(count);
+        const v = new THREE.Vector3();
+        for (let i = 0; i < count; i++) {
+          v.fromBufferAttribute(position, i).applyMatrix4(obj.matrixWorld);
+          const zone = this.classifyVertex(v);
+          zones[i] = zone ? ZONE_INDEX[zone] : 0;
+          blend[i] = zone ? this.zoneBlend(v, zone) : 0;
+        }
+        const tint = new THREE.BufferAttribute(new Float32Array(count * 3), 3);
+        const weight = new THREE.BufferAttribute(new Float32Array(count), 1);
+        geometry.setAttribute('zoneTint', tint);
+        geometry.setAttribute('zoneWeight', weight);
+        this.paints.push({ tint, weight, zone: zones, blend });
+
+        const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+        for (const material of materials) patchZoneWash(material);
+        this.pickMeshes.push(obj);
       });
 
+      const map = this.map();
+      if (map) this.applyMap(map);
       this.ready.set(true);
     } catch (err) {
       console.error('No se pudo cargar el modelo 3D', err);
@@ -277,6 +378,60 @@ export class Body3D implements AfterViewInit, OnDestroy {
       }
     }
     return bestDist < 0.02 ? best : null;
+  }
+
+  /** Factor de mezcla 0..1 dentro de la zona (1 = centro, 0 = borde suave). */
+  private zoneBlend(p: THREE.Vector3, macro: MacroCode): number {
+    const yN = p.y / NORM_HEIGHT;
+    const xN = Math.abs(p.x) / NORM_HEIGHT;
+    const zN = p.z / NORM_HEIGHT;
+    const fade = (value: number, margin: number) => {
+      const t = Math.min(1, Math.max(0, value / margin));
+      return t * t * (3 - 2 * t);
+    };
+    switch (macro) {
+      case 'BRA':
+        return Math.min(fade(xN - 0.115, 0.035), fade(yN - 0.63, 0.035), fade(0.88 - yN, 0.035));
+      case 'MUS':
+        return Math.min(fade(xN - 0.015, 0.03), fade(yN - 0.24, 0.04), fade(0.46 - yN, 0.04));
+      case 'GLU':
+        return Math.min(fade(-zN - 0.015, 0.03), fade(yN - 0.44, 0.03), fade(0.53 - yN, 0.03));
+      case 'ABD':
+        return Math.min(fade(zN + 0.04, 0.03), fade(yN - 0.49, 0.03), fade(0.63 - yN, 0.03));
+    }
+  }
+
+  /** Pinta cada zona con un velo del color de su estado, fundido en los bordes. */
+  private applyMap(map: MapResponse): void {
+    if (this.paints.length === 0) return;
+    const suggested = this.suggestionMacro();
+
+    const washes: { color: readonly [number, number, number]; strength: number }[] = [
+      { color: [0, 0, 0], strength: 0 },
+      { color: [0, 0, 0], strength: 0 },
+      { color: [0, 0, 0], strength: 0 },
+      { color: [0, 0, 0], strength: 0 },
+      { color: [0, 0, 0], strength: 0 },
+    ];
+    for (const macro of MACROS) {
+      const color = worstColor(macroCells(map, macro));
+      washes[ZONE_INDEX[macro]] = suggested === macro ? SUGGESTED_WASH : ZONE_WASH[color];
+    }
+
+    for (const paint of this.paints) {
+      const tint = paint.tint.array as Float32Array;
+      const weight = paint.weight.array as Float32Array;
+      for (let i = 0; i < paint.zone.length; i++) {
+        const wash = washes[paint.zone[i]];
+        const w = paint.blend[i] * wash.strength;
+        tint[i * 3] = wash.color[0];
+        tint[i * 3 + 1] = wash.color[1];
+        tint[i * 3 + 2] = wash.color[2];
+        weight[i] = w;
+      }
+      paint.tint.needsUpdate = true;
+      paint.weight.needsUpdate = true;
+    }
   }
 
   private onResize = (): void => {
