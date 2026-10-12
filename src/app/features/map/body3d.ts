@@ -18,13 +18,13 @@ import type { CellColor, MapResponse } from '../../core/data/types';
 import { MACROS, macroCells, worstColor } from '../../core/util/body';
 import type { MacroCode } from '../../core/util/body';
 
-/* Materiales del maniquí anatómico */
-const SKIN = '#c9c9c9';
-const SKIN_ROUGH = 0.42;
-const SHORTS = '#2c2c2c';
+/* Materiales del modelo anatómico */
+const SKIN = '#cfcfcf';
+const SKIN_ROUGH = 0.48;
+const SHORTS = '#2b2b2b';
 const HAIR = '#3a3a3a';
 
-/** Tinte de músculo por estado: verde = cuerpo neutro, amarillo/rojo resaltan. */
+/** Tinte de músculo por estado: verde sano = cuerpo neutro. */
 const MUSCLE_TINT: Record<CellColor, string> = {
   RED: '#c9583f',
   YELLOW: '#dfa63e',
@@ -33,10 +33,10 @@ const MUSCLE_TINT: Record<CellColor, string> = {
 
 /** Posición de la etiqueta flotante de cada zona. */
 const ZONE_BADGE: Record<MacroCode, [number, number, number]> = {
-  ABD: [0.38, 1.5, 0.18],
-  MUS: [0.42, 0.85, 0.16],
-  BRA: [0.62, 1.67, 0],
-  GLU: [-0.38, 1.1, -0.32],
+  ABD: [0.3, 1.32, 0.12],
+  MUS: [0.28, 0.78, 0.1],
+  BRA: [0.42, 1.45, 0],
+  GLU: [-0.28, 1.0, -0.22],
 };
 
 const STATUS_SHORT: Record<CellColor, string> = {
@@ -52,8 +52,8 @@ const LABEL_CLASS: Record<CellColor, string> = {
 };
 
 /**
- * Maniquí anatómico 3D (estilo modelo médico): cuerpo gris con shorts,
- * zonas musculares resaltables por recuperación y rotable con OrbitControls.
+ * Modelo anatómico 3D masculino (proporciones reales, grupos musculares
+ * esculpidos por primitivas) con zonas resaltables por recuperación.
  */
 @Component({
   selector: 'app-body3d',
@@ -191,26 +191,26 @@ export class Body3D implements AfterViewInit, OnDestroy {
       0.1,
       100,
     );
-    this.camera.position.set(0, 1.55, 4.9);
+    this.camera.position.set(0, 1.25, 4.1);
 
     this.controls = new OrbitControls(this.camera, canvas);
-    this.controls.target.set(0, 1.32, 0);
+    this.controls.target.set(0, 1.1, 0);
     this.controls.enablePan = false;
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
-    this.controls.minDistance = 2.6;
-    this.controls.maxDistance = 7;
-    this.controls.minPolarAngle = 0.8;
-    this.controls.maxPolarAngle = 2.2;
+    this.controls.minDistance = 2.2;
+    this.controls.maxDistance = 6.5;
+    this.controls.minPolarAngle = 0.85;
+    this.controls.maxPolarAngle = 2.15;
 
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-    const key = new THREE.DirectionalLight(0xffffff, 1.5);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const key = new THREE.DirectionalLight(0xffffff, 1.6);
     key.position.set(3.5, 6, 4.5);
     this.scene.add(key);
     const fill = new THREE.DirectionalLight(0xe8dccb, 0.5);
     fill.position.set(-5, 3.5, -3);
     this.scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.35);
+    const rim = new THREE.DirectionalLight(0xffffff, 0.4);
     rim.position.set(0, 4, -6);
     this.scene.add(rim);
 
@@ -229,7 +229,7 @@ export class Body3D implements AfterViewInit, OnDestroy {
     return new THREE.MeshStandardMaterial({
       color: new THREE.Color(SKIN),
       roughness: SKIN_ROUGH,
-      metalness: 0.08,
+      metalness: 0.06,
     });
   }
 
@@ -246,90 +246,144 @@ export class Body3D implements AfterViewInit, OnDestroy {
       parent.add(mesh);
       return mesh;
     };
+    /** Elipsoide suave (esfera unitaria escalada). */
+    const blob = (
+      rx: number,
+      ry: number,
+      rz: number,
+      x: number,
+      y: number,
+      z: number,
+      material?: THREE.Material,
+    ): THREE.Mesh => {
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), material ?? this.skinMaterial());
+      mesh.scale.set(rx, ry, rz);
+      mesh.position.set(x, y, z);
+      return add(mesh);
+    };
+    const limb = (
+      rTop: number,
+      rBottom: number,
+      height: number,
+      x: number,
+      y: number,
+      material?: THREE.Material,
+    ): THREE.Mesh => {
+      const mesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(rTop, rBottom, height, 28),
+        material ?? this.skinMaterial(),
+      );
+      mesh.position.set(x, y, 0);
+      return add(mesh);
+    };
+    const box = (
+      w: number,
+      h: number,
+      d: number,
+      x: number,
+      y: number,
+      z: number,
+      radius: number,
+      material?: THREE.Material,
+    ): THREE.Mesh => {
+      const mesh = new THREE.Mesh(
+        new RoundedBoxGeometry(w, h, d, 4, radius),
+        material ?? this.skinMaterial(),
+      );
+      mesh.position.set(x, y, z);
+      return add(mesh);
+    };
 
-    /* ------- Piernas ------- */
-    // Pies
-    for (const x of [-0.13, 0.13]) {
-      const foot = add(new THREE.Mesh(new RoundedBoxGeometry(0.15, 0.07, 0.3, 4, 0.03), this.skinMaterial()));
-      foot.position.set(x, 0.035, 0.05);
+    /* ================= Piernas ================= */
+    // Pies (con empeine)
+    for (const x of [-0.09, 0.09]) {
+      box(0.11, 0.055, 0.24, x, 0.028, 0.04, 0.022);
+      box(0.1, 0.045, 0.09, x, 0.033, 0.17, 0.02);
     }
-    // Pantorrillas
-    for (const x of [-0.13, 0.13]) {
-      add(new THREE.Mesh(new THREE.CapsuleGeometry(0.085, 0.3, 8, 24), this.skinMaterial())).position.set(x, 0.34, 0);
+    // Tobillos
+    for (const x of [-0.09, 0.09]) limb(0.045, 0.042, 0.12, x, 0.12);
+    // Gemelos (dos cabezas, como la lámina)
+    for (const x of [-0.09, 0.09]) {
+      limb(0.052, 0.062, 0.3, x, 0.34);
+      blob(0.045, 0.1, 0.05, x - 0.015, 0.37, -0.03);
+      blob(0.045, 0.1, 0.05, x + 0.015, 0.37, -0.03);
     }
     // Rodillas
-    for (const x of [-0.13, 0.13]) {
-      add(new THREE.Mesh(new THREE.SphereGeometry(0.095, 24, 24), this.skinMaterial())).position.set(x, 0.63, 0);
+    for (const x of [-0.09, 0.09]) blob(0.068, 0.058, 0.07, x, 0.55, 0.005);
+    // Muslos (zona MUS) + cuádriceps
+    const mus: THREE.Mesh[] = [];
+    for (const x of [-0.1, 0.1]) {
+      const thigh = limb(0.095, 0.072, 0.42, x, 0.76);
+      const quad = blob(0.07, 0.15, 0.05, x, 0.79, 0.04);
+      mus.push(thigh, quad);
     }
-    // Muslos (zona MUS)
-    const musA = add(new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.09, 0.4, 28), this.skinMaterial()));
-    musA.position.set(-0.135, 0.86, 0);
-    const musB = add(new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.09, 0.4, 28), this.skinMaterial()));
-    musB.position.set(0.135, 0.86, 0);
-    this.registerZone('MUS', musA, musB);
+    this.registerZone('MUS', ...mus);
 
-    /* ------- Shorts (oscuros, estilo referencia) ------- */
-    for (const x of [-0.135, 0.135]) {
-      const cuff = add(new THREE.Mesh(new THREE.CylinderGeometry(0.135, 0.13, 0.16, 28), this.plainMaterial(SHORTS, 0.8)));
-      cuff.position.set(x, 1.1, 0);
+    /* ================= Shorts ================= */
+    for (const x of [-0.1, 0.1]) {
+      limb(0.112, 0.105, 0.16, x, 0.98, this.plainMaterial(SHORTS, 0.85));
     }
-    const pelvis = add(new THREE.Mesh(new RoundedBoxGeometry(0.42, 0.3, 0.3, 4, 0.1), this.plainMaterial(SHORTS, 0.8)));
-    pelvis.position.set(0, 1.22, 0);
+    box(0.34, 0.24, 0.24, 0, 1.06, 0, 0.09, this.plainMaterial(SHORTS, 0.85));
 
     // Glúteos (zona GLU) — sobresalen detrás del shorts
-    const gluA = add(new THREE.Mesh(new THREE.SphereGeometry(0.115, 26, 26), this.skinMaterial()));
-    gluA.position.set(-0.11, 1.22, -0.17);
-    const gluB = add(new THREE.Mesh(new THREE.SphereGeometry(0.115, 26, 26), this.skinMaterial()));
-    gluB.position.set(0.11, 1.22, -0.17);
+    const gluA = blob(0.095, 0.1, 0.095, -0.085, 1.04, -0.125);
+    const gluB = blob(0.095, 0.1, 0.095, 0.085, 1.04, -0.125);
     this.registerZone('GLU', gluA, gluB);
 
-    /* ------- Torso ------- */
-    // Abdomen (zona ABD)
-    const abd = add(new THREE.Mesh(new RoundedBoxGeometry(0.36, 0.3, 0.24, 4, 0.1), this.skinMaterial()));
-    abd.position.set(0, 1.5, 0);
-    this.registerZone('ABD', abd);
-
-    // Pecho + pectorales (placas planas, lectura masculina)
-    const chest = add(new THREE.Mesh(new RoundedBoxGeometry(0.5, 0.3, 0.28, 4, 0.12), this.skinMaterial()));
-    chest.position.set(0, 1.78, 0);
-    for (const x of [-0.12, 0.12]) {
-      const pec = add(new THREE.Mesh(new RoundedBoxGeometry(0.19, 0.13, 0.06, 3, 0.03), this.skinMaterial()));
-      pec.position.set(x, 1.8, 0.135);
+    /* ================= Torso ================= */
+    // Cintura + oblicuos + abdominales (zona ABD)
+    const abd: THREE.Mesh[] = [];
+    abd.push(box(0.3, 0.26, 0.2, 0, 1.3, 0, 0.09));
+    abd.push(blob(0.045, 0.1, 0.06, -0.13, 1.28, 0.045));
+    abd.push(blob(0.045, 0.1, 0.06, 0.13, 1.28, 0.045));
+    for (const y of [1.38, 1.31, 1.24]) {
+      abd.push(box(0.07, 0.052, 0.03, -0.042, y, 0.105, 0.014));
+      abd.push(box(0.07, 0.052, 0.03, 0.042, y, 0.105, 0.014));
     }
+    this.registerZone('ABD', ...abd);
 
-    /* ------- Brazos ------- */
+    // Pecho + pectorales
+    box(0.42, 0.24, 0.24, 0, 1.52, 0, 0.1);
+    for (const x of [-0.1, 0.1]) box(0.16, 0.11, 0.05, x, 1.54, 0.115, 0.03);
+    // Dorsales (laterales del torso)
+    for (const x of [-0.17, 0.17]) blob(0.05, 0.14, 0.11, x, 1.42, -0.02);
+    // Trapecios
+    for (const x of [-0.09, 0.09]) blob(0.08, 0.045, 0.06, x, 1.67, -0.035);
+
+    /* ================= Brazos ================= */
     // Deltoides
-    for (const x of [-0.31, 0.31]) {
-      add(new THREE.Mesh(new THREE.SphereGeometry(0.11, 26, 26), this.skinMaterial())).position.set(x, 1.9, 0);
+    for (const x of [-0.24, 0.24]) blob(0.085, 0.09, 0.085, x, 1.62, 0);
+    // Brazo superior (zona BRA) + bíceps/tríceps
+    const bra: THREE.Mesh[] = [];
+    for (const x of [-0.25, 0.25]) {
+      const upper = limb(0.052, 0.048, 0.24, x, 1.45);
+      const biceps = blob(0.045, 0.085, 0.05, x, 1.46, 0.035);
+      const triceps = blob(0.04, 0.08, 0.045, x, 1.45, -0.035);
+      bra.push(upper, biceps, triceps);
     }
-    // Brazo superior (zona BRA)
-    const braA = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.24, 8, 22), this.skinMaterial()));
-    braA.position.set(-0.33, 1.67, 0);
-    const braB = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.24, 8, 22), this.skinMaterial()));
-    braB.position.set(0.33, 1.67, 0);
-    this.registerZone('BRA', braA, braB);
+    this.registerZone('BRA', ...bra);
+    // Codos
+    for (const x of [-0.25, 0.25]) blob(0.05, 0.05, 0.05, x, 1.31, 0);
     // Antebrazos
-    for (const x of [-0.35, 0.35]) {
-      add(new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.24, 8, 20), this.skinMaterial())).position.set(x, 1.36, 0);
-    }
-    // Manos
-    for (const x of [-0.36, 0.36]) {
-      const hand = add(new THREE.Mesh(new RoundedBoxGeometry(0.08, 0.14, 0.05, 3, 0.02), this.skinMaterial()));
-      hand.position.set(x, 1.16, 0);
+    for (const x of [-0.255, 0.255]) limb(0.05, 0.038, 0.26, x, 1.17);
+    // Manos (con pulgar)
+    for (const x of [-0.26, 0.26]) {
+      box(0.065, 0.11, 0.04, x, 1.02, 0.005, 0.018);
+      blob(0.02, 0.04, 0.025, x - 0.035 * Math.sign(x), 1.05, 0.02);
     }
 
-    /* ------- Cabeza ------- */
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.14, 24), this.skinMaterial())).position.set(0, 2.02, 0);
-    const head = add(new THREE.Mesh(new THREE.SphereGeometry(0.15, 36, 36), this.skinMaterial()));
-    head.position.set(0, 2.22, 0);
-    head.scale.set(0.92, 1.08, 0.98);
-    // Cabello
-    const hair = add(new THREE.Mesh(new THREE.SphereGeometry(0.155, 36, 36), this.plainMaterial(HAIR, 0.65)));
-    hair.position.set(0, 2.27, -0.01);
-    hair.scale.set(0.98, 0.78, 1.0);
-    const nape = add(new THREE.Mesh(new THREE.SphereGeometry(0.12, 28, 28), this.plainMaterial(HAIR, 0.65)));
-    nape.position.set(0, 2.2, -0.08);
-    nape.scale.set(0.95, 0.9, 0.75);
+    /* ================= Cabeza ================= */
+    // Cuello
+    limb(0.052, 0.062, 0.13, 0, 1.72);
+    // Cráneo + mandíbula + nariz
+    blob(0.105, 0.125, 0.115, 0, 1.88, 0);
+    blob(0.085, 0.06, 0.09, 0, 1.805, 0.015);
+    blob(0.018, 0.026, 0.022, 0, 1.865, 0.108);
+    // Orejas
+    for (const x of [-0.1, 0.1]) blob(0.014, 0.032, 0.022, x, 1.87, 0.005);
+    // Cabello (deja ver la frente)
+    blob(0.108, 0.082, 0.105, 0, 1.94, -0.035, this.plainMaterial(HAIR, 0.7));
+    blob(0.085, 0.08, 0.055, 0, 1.9, -0.085, this.plainMaterial(HAIR, 0.7));
   }
 
   private registerZone(macro: MacroCode, ...meshes: THREE.Mesh[]): void {
