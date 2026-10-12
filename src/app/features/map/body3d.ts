@@ -29,7 +29,7 @@ function srgb(hex: string): [number, number, number] {
   const c = new THREE.Color(hex).convertSRGBToLinear();
   return [c.r, c.g, c.b];
 }
-const BODY_BASE = srgb('#d3d1cd');
+const BODY_BASE = srgb('#eeeeec');
 const ZONE_COLOR: Record<CellColor, [number, number, number]> = {
   RED: srgb('#e03a30'),
   YELLOW: srgb('#f2a02a'),
@@ -225,14 +225,14 @@ export class Body3D implements AfterViewInit, OnDestroy {
     this.controls.minPolarAngle = 0.85;
     this.controls.maxPolarAngle = 2.15;
 
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.95));
-    const key = new THREE.DirectionalLight(0xffffff, 2.0);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+    const key = new THREE.DirectionalLight(0xffffff, 2.2);
     key.position.set(2.5, 4, 3.5);
     this.scene.add(key);
-    const fill = new THREE.DirectionalLight(0xe8dccb, 0.7);
+    const fill = new THREE.DirectionalLight(0xe8dccb, 0.65);
     fill.position.set(-3.5, 2.5, -2.5);
     this.scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.6);
+    const rim = new THREE.DirectionalLight(0xffffff, 0.55);
     rim.position.set(0, 3, -4);
     this.scene.add(rim);
 
