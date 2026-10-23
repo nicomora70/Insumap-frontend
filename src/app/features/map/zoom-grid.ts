@@ -13,11 +13,11 @@ import type { SegmentOption } from '../../shared/ui/segmented';
   selector: 'app-zoom-grid',
   imports: [UiBtn, UiSegmented, LucideArrowLeft, LucideX, LucideTriangleAlert, LucideCheck],
   template: `
-    <div class="px-5 pb-5 pt-2">
+    <div class="p-4 sm:p-5">
       <div class="flex items-center gap-3">
         <button
           uiBtn
-          variant="outline"
+          variant="soft"
           [icon]="true"
           type="button"
           [extraClass]="'shrink-0'"
@@ -38,7 +38,7 @@ import type { SegmentOption } from '../../shared/ui/segmented';
       </div>
 
       <div
-        class="mt-4 grid gap-2"
+        class="mt-5 grid gap-2.5"
         [style.grid-template-columns]="'repeat(' + cols() + ', minmax(0, 1fr))'"
         role="group"
         [attr.aria-label]="'Cuadrícula ' + macroLabel() + ' lado ' + currentSide()"
@@ -65,7 +65,7 @@ import type { SegmentOption } from '../../shared/ui/segmented';
           </button>
         }
       </div>
-      <p class="mt-3 text-caption text-muted">
+      <p class="mt-4 text-caption leading-relaxed text-muted">
         Con 6×6 la cuadrícula se compacta para mantener objetivos ≥44px.
       </p>
     </div>
@@ -99,8 +99,9 @@ export class ZoomGrid {
   }
 
   protected cellCls(cell: CellOut): string {
-    const highlight = this.highlightId() === cell.id ? 'ring-2 ring-ink ring-offset-1' : '';
-    return `touch-target pressable focus-ring flex aspect-square cursor-pointer items-center justify-center rounded-2xl border border-line ${CELL_STYLE[cell.color]} ${highlight}`;
+    const highlight =
+      this.highlightId() === cell.id ? 'ring-2 ring-ember-ink ring-offset-2 ring-offset-app-bg' : '';
+    return `touch-target pressable focus-ring flex aspect-square cursor-pointer items-center justify-center rounded-[1.25rem] border border-line/70 ${CELL_STYLE[cell.color]} ${highlight}`;
   }
 
   protected ariaFor(cell: CellOut): string {

@@ -6,6 +6,9 @@ import type { CellColor, CellOut } from '../../core/data/types';
 import { COLOR_WORD, formatAppliedAt } from '../../core/util/format';
 import { UiBtn } from '../../shared/ui/button';
 import { INPUT_SM } from '../../shared/ui/classes';
+import { UiPill } from '../../shared/ui/status-pill';
+import { UiRing } from '../../shared/ui/ring';
+import type { RingTone } from '../../shared/ui/ring';
 import { UiSheet } from '../../shared/ui/sheet';
 
 export interface RegisteredEvent {
@@ -13,12 +16,6 @@ export interface RegisteredEvent {
   microzoneId: string;
   canUndo: boolean;
 }
-
-const COLOR_TXT: Record<CellColor, string> = {
-  RED: 'text-mz-red',
-  YELLOW: 'text-mz-yellow',
-  GREEN: 'text-mz-green',
-};
 
 const MACRO_NAME: Record<string, string> = {
   ABD: 'Abdomen',
@@ -30,24 +27,23 @@ const MACRO_NAME: Record<string, string> = {
 /** P05: hoja inferior de la microzona con registro y advertencia (R04). */
 @Component({
   selector: 'app-microzone-sheet',
-  imports: [UiBtn, UiSheet, LucideTriangleAlert],
+  imports: [UiBtn, UiSheet, UiRing, UiPill, LucideTriangleAlert],
   template: `
     <ui-sheet [label]="'Microzona ' + cell().id" (closed)="close.emit()">
       <p class="text-small text-muted">{{ header() }}</p>
-      <h2 class="tnum text-h3 font-medium text-ink-strong">{{ cell().id }}</h2>
-      <p class="mt-1.5 text-body">
-        <strong [class]="colorTxt()">{{ colorWord() }} · {{ pct() }}% recup.</strong>
-        <span class="text-muted">
-          {{
-            cell().hours_remaining <= 0
-              ? 'Disponible ahora'
-              : 'Disponible en ~' + hoursRounded() + ' h'
-          }}
-        </span>
-      </p>
-      <p class="text-small text-muted">
-        {{ lastText() }} · {{ cell().uses_30d }} usos en 30 días
-      </p>
+      <div class="mt-1 flex flex-wrap items-start justify-between gap-3">
+        <h2 class="tnum text-h2 text-ink-strong">{{ cell().id }}</h2>
+        <ui-pill [color]="cell().color" />
+      </div>
+
+      <div class="mt-5 flex items-center gap-4 rounded-3xl bg-sand/70 p-4">
+        <ui-ring [value]="pct()" label="recuperación" [size]="92" [tone]="ringTone()" />
+        <div class="min-w-0">
+          <p class="text-title font-medium text-ink-strong">{{ availability() }}</p>
+          <p class="mt-1 text-small leading-relaxed text-muted">{{ lastText() }}</p>
+          <p class="text-small text-muted">{{ cell().uses_30d }} usos en 30 días</p>
+        </div>
+      </div>
 
       @if (!warn()) {
         <div class="mt-5">
@@ -66,7 +62,7 @@ const MACRO_NAME: Record<string, string> = {
               aria-label="Elegir hora de aplicación"
               [value]="customTime()"
               (change)="onCustomTime($event)"
-              [class]="inputSm"
+              [class]="inputSm + ' min-w-0'"
             />
           </div>
         </div>
@@ -76,22 +72,23 @@ const MACRO_NAME: Record<string, string> = {
         <button
           uiBtn
           type="button"
-          [extraClass]="'mt-5 w-full py-3.5'"
+          [extraClass]="'mt-5 w-full'"
           [disabled]="map.registerPending()"
           (click)="onRegisterClick()"
         >
           {{ map.registerPending() ? 'Registrando…' : 'Registrar inyección' }}
         </button>
       } @else {
-        <p
-          class="mt-5 flex items-start gap-2.5 rounded-2xl bg-honey-soft px-4 py-3.5 text-small font-medium text-olive"
-        >
-          <svg lucideTriangleAlert [size]="18" class="mt-0.5 shrink-0" aria-hidden="true"></svg>
-          <span>
-            Esta zona aún no se recupera ({{ colorWord() }}). Puedes usarla igual, pero te sugerimos
-            {{ suggestedId() ?? 'otra microzona' }}.
-          </span>
-        </p>
+        <div class="mt-5 rounded-3xl border border-olive/15 bg-honey-soft p-4">
+          <p class="flex items-center gap-2 text-small font-semibold text-olive">
+            <svg lucideTriangleAlert [size]="18" [strokeWidth]="2.2" aria-hidden="true"></svg>
+            Esta zona aún se recupera
+          </p>
+          <p class="mt-2 text-small leading-relaxed text-olive">
+            Puedes usarla igual, pero te sugerimos {{ suggestedId() ?? 'otra microzona' }}.
+            <span class="tnum">({{ colorWord() }})</span>
+          </p>
+        </div>
         @if (error(); as msg) {
           <p role="alert" class="mt-2.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
@@ -100,7 +97,7 @@ const MACRO_NAME: Record<string, string> = {
             <button
               uiBtn
               type="button"
-              [extraClass]="'w-full py-3.5'"
+              [extraClass]="'w-full'"
               (click)="useSuggested.emit(suggested)"
             >
               Usar sugerida ({{ suggested }})
@@ -110,13 +107,13 @@ const MACRO_NAME: Record<string, string> = {
             uiBtn
             variant="soft"
             type="button"
-            [extraClass]="'w-full py-3.5'"
+            [extraClass]="'w-full'"
             [disabled]="map.registerPending()"
             (click)="submit(true)"
           >
             {{ map.registerPending() ? 'Registrando…' : 'Registrar igual' }}
           </button>
-          <button uiBtn variant="ghost" type="button" [extraClass]="'w-full py-3'" (click)="warn.set(false)">
+          <button uiBtn variant="ghost" type="button" [extraClass]="'w-full'" (click)="warn.set(false)">
             Atrás
           </button>
         </div>
@@ -144,7 +141,15 @@ export class MicrozoneSheet {
   protected readonly pct = computed(() => Math.min(100, Math.round(this.cell().ratio * 100)));
   protected readonly hoursRounded = computed(() => Math.round(this.cell().hours_remaining));
   protected readonly colorWord = computed(() => COLOR_WORD[this.cell().color]);
-  protected readonly colorTxt = computed(() => COLOR_TXT[this.cell().color]);
+  protected readonly ringTone = computed<RingTone>(() => {
+    const color: CellColor = this.cell().color;
+    return color === 'RED' ? 'red' : color === 'YELLOW' ? 'yellow' : 'green';
+  });
+  protected readonly availability = computed(() =>
+    this.cell().hours_remaining <= 0
+      ? 'Disponible ahora'
+      : `Disponible en ~${this.hoursRounded()} h`,
+  );
   protected readonly lastText = computed(() => {
     const last = this.cell().last_used;
     if (!last) return 'Nunca usada';
@@ -160,7 +165,9 @@ export class MicrozoneSheet {
   protected timeBtnCls(mode: 'now' | 'custom'): string {
     const on = this.timeMode() === mode;
     return `touch-target focus-ring cursor-pointer rounded-2xl border text-body font-medium transition-colors ${
-      on ? 'border-line bg-card text-ink' : 'border-line bg-sand text-muted hover:text-ink'
+      on
+        ? 'border-primary bg-primary text-cream shadow-[inset_0_1px_0_rgb(255_227_209/0.2)]'
+        : 'border-line bg-card text-ink-soft hover:bg-sand'
     }`;
   }
 

@@ -134,7 +134,7 @@ const LABEL_CLASS: Record<CellColor, string> = {
   imports: [LucideX, LucideTriangleAlert, LucideCheck, LucideStar],
   template: `
     <div
-      class="relative h-[460px] w-full sm:h-[520px]"
+      class="relative h-[440px] w-full sm:h-[600px]"
       aria-label="Cuerpo 3D: arrastra para girar, toca una zona para ver su cuadrícula"
     >
       @if (!ready()) {
@@ -146,14 +146,14 @@ const LABEL_CLASS: Record<CellColor, string> = {
       }
       <div
         aria-hidden="true"
-        class="pointer-events-none absolute bottom-10 left-1/2 h-12 w-56 -translate-x-1/2 rounded-[50%] bg-ink/10 blur-xl"
+        class="pointer-events-none absolute bottom-10 left-1/2 h-12 w-56 -translate-x-1/2 rounded-[50%] bg-oxblood/10 blur-xl"
       ></div>
       <canvas #canvasRef class="relative h-full w-full touch-none"></canvas>
 
       @for (macro of macros; track macro) {
         <span
           #lbl
-          class="pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded-full border border-line bg-card px-2.5 py-1 text-caption font-medium shadow-[0_4px_12px_rgb(31_26_20/0.08)]"
+          class="pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded-full border border-line/70 bg-card/85 px-2.5 py-1.5 text-[11px] font-semibold shadow-[0_6px_18px_rgb(71_32_28/0.10)] backdrop-blur-md"
           [class]="labelClass(macro)"
         >
           @if (suggestionMacro() === macro) {

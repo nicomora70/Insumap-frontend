@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { LucideChevronRight, LucideStar } from '@lucide/angular';
+import { LucideChevronRight, LucideSparkles, LucideStar } from '@lucide/angular';
 import { AuthService } from '../../core/auth/auth.service';
 import { MapStore } from '../../core/data/map.store';
 import { ToastService } from '../../core/data/toast.service';
@@ -12,9 +12,9 @@ import { SUGGESTED_HEX, ZONE_HEX } from '../../core/util/zone-colors';
 import { describeLocation } from '../../core/util/format';
 import { AppShell } from '../../shared/shell/app-shell';
 import { UiBtn } from '../../shared/ui/button';
+import { UiRing } from '../../shared/ui/ring';
 import { UiSegmented } from '../../shared/ui/segmented';
 import type { SegmentOption } from '../../shared/ui/segmented';
-import { TAB_CARD } from '../../shared/ui/classes';
 import { Body3D } from './body3d';
 import { MacroGrid } from './macro-grid';
 import { MicrozoneSheet } from './microzone-sheet';
@@ -55,97 +55,182 @@ interface ZoomState {
   highlight: string | null;
 }
 
-/** P04: inicio del paciente con la composición editorial de la referencia. */
+/** P04: inicio del paciente con composición editorial. */
 @Component({
   selector: 'app-map-page',
-  imports: [AppShell, UiBtn, UiSegmented, Body3D, ZoomGrid, MacroGrid, MicrozoneSheet, LucideChevronRight, LucideStar],
+  imports: [
+    AppShell,
+    UiBtn,
+    UiRing,
+    UiSegmented,
+    Body3D,
+    ZoomGrid,
+    MacroGrid,
+    MicrozoneSheet,
+    LucideChevronRight,
+    LucideSparkles,
+    LucideStar,
+  ],
   template: `
     <app-shell [userName]="userName()" [tabs]="tabs" active="mapa">
       <main class="page-enter">
         @if (mapStore.loading() && !mapStore.map()) {
           <div class="space-y-4" aria-label="Cargando mapa">
-            <div class="h-16 w-2/3 animate-pulse rounded-2xl bg-sand"></div>
-            <div class="h-56 animate-pulse rounded-3xl bg-sand"></div>
-            <div class="h-[420px] animate-pulse rounded-3xl bg-sand"></div>
+            <div class="h-20 w-2/3 animate-pulse rounded-3xl bg-sand"></div>
+            <div class="h-64 animate-pulse rounded-[2rem] bg-sand"></div>
+            <div class="h-[420px] animate-pulse rounded-[2rem] bg-sand"></div>
           </div>
         } @else if (mapStore.error(); as msg) {
           <div class="mx-auto flex max-w-md flex-col items-center py-20 text-center">
-            <p class="text-h3 font-normal text-ink-strong">No pudimos cargar tu mapa</p>
+            <p class="text-h3 text-ink-strong">No pudimos cargar tu mapa</p>
             <p class="mt-2 text-small text-muted">{{ msg }}</p>
-            <button uiBtn type="button" [extraClass]="'mt-6 w-full py-3.5'" (click)="mapStore.refresh()">
+            <button uiBtn type="button" [extraClass]="'mt-6 w-full'" (click)="mapStore.refresh()">
               Reintentar
             </button>
           </div>
         } @else if (mapStore.map(); as map) {
           <!-- Titular editorial -->
-          <p class="text-body text-muted">Hola, {{ userName() }}</p>
-          <h1
-            class="mt-2 max-w-3xl text-display font-normal text-ink-strong"
-          >
-            El cuidado que <span class="text-caramel">mereces</span>
-          </h1>
+          <section class="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+            <div class="min-w-0">
+              <p class="text-small text-muted">{{ todayLabel }} · Hola, {{ firstName() }}</p>
+              <h1 class="mt-3 max-w-3xl text-display text-ink-strong">
+                El cuidado que <span class="accent accent-mark">mereces</span>
+              </h1>
+              <p class="mt-5 max-w-xl text-body leading-relaxed text-muted">{{ heroSubline() }}</p>
+            </div>
+            <div class="hidden shrink-0 sm:block">
+              <ui-ring [value]="readyPct()" label="listas" [size]="112" tone="ember" />
+            </div>
+          </section>
 
-          <!-- Tarjetas destacadas (marrón cálido) -->
-          <div class="mt-8 grid gap-4 md:grid-cols-2">
+          <!-- Bento: próxima dosis + asistente -->
+          <section class="mt-9 grid gap-3 lg:grid-cols-3">
             @if (topSuggestion(); as sug) {
               <button
                 type="button"
                 (click)="locate(sug.microzone_id)"
-                class="pressable focus-ring group flex min-h-[210px] w-full cursor-pointer flex-col justify-between rounded-3xl bg-gradient-to-br from-cocoa to-cocoa-soft p-6 text-left text-cream sm:min-h-[240px]"
+                class="panel-ink card-lift pressable focus-ring group relative flex min-h-[250px] flex-col justify-between overflow-hidden rounded-[2rem] p-6 text-left sm:min-h-[280px] sm:p-8 lg:col-span-2"
               >
-                <span class="text-h3 font-normal leading-snug sm:text-h2">
-                  Tu próxima dosis
-                  <span class="block text-honey">
-                    {{ describe(sug.microzone_id) }}
+                <span
+                  aria-hidden="true"
+                  class="pointer-events-none absolute -right-3 -top-12 font-display text-[170px] leading-none text-cream/[0.06]"
+                >
+                  01
+                </span>
+                <div class="relative">
+                  <p class="text-caption font-medium uppercase tracking-[0.16em] text-cream/55">
+                    Siguiente aplicación
+                  </p>
+                  <p class="mt-4 max-w-xl text-h2 text-cream">
+                    Va en <span class="text-ember">{{ describe(sug.microzone_id) }}</span>
+                  </p>
+                </div>
+                <div class="relative mt-8 flex flex-wrap items-center justify-between gap-3">
+                  <span
+                    class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2.5 text-small font-medium text-cream transition-colors group-hover:bg-white/15"
+                  >
+                    Ver en el mapa
+                    <svg lucideChevronRight [size]="18" aria-hidden="true"></svg>
                   </span>
-                </span>
-                <span class="flex items-center justify-between text-small font-medium">
-                  Ver en el mapa
-                  <svg lucideChevronRight [size]="20" aria-hidden="true"></svg>
-                </span>
+                  <span class="tnum text-caption font-medium tracking-[0.08em] text-cream/50">
+                    {{ sug.microzone_id }}
+                  </span>
+                </div>
               </button>
+            } @else {
+              <div
+                class="panel-ink flex min-h-[250px] flex-col justify-between rounded-[2rem] p-6 sm:min-h-[280px] sm:p-8 lg:col-span-2"
+              >
+                <p class="text-caption font-medium uppercase tracking-[0.16em] text-cream/55">
+                  Siguiente aplicación
+                </p>
+                <p class="mt-4 max-w-xl text-h2 text-cream">
+                  Aún no hay una zona sugerida.
+                </p>
+                <p class="mt-3 text-small text-cream/70">
+                  Registra una aplicación o revisa tu mapa para ver la siguiente.
+                </p>
+              </div>
             }
 
             <button
               type="button"
               (click)="askWhy()"
-              class="pressable focus-ring group flex min-h-[210px] w-full cursor-pointer flex-col justify-between rounded-3xl bg-gradient-to-br from-caramel to-honey p-6 text-left text-ink-strong sm:min-h-[240px]"
+              class="card-lift pressable focus-ring group flex min-h-[250px] flex-col justify-between rounded-[2rem] border border-ember/20 bg-ember-soft p-6 text-left sm:min-h-[280px] sm:p-8"
             >
-              <span class="text-h3 font-normal leading-snug sm:text-h2">
-                ¿Por qué esta zona?
-                <span class="block text-ink-strong/80">Pregúntale al asistente</span>
+              <span class="grid h-11 w-11 place-items-center rounded-full bg-card/60 text-ember-ink">
+                <svg lucideSparkles [size]="20" [strokeWidth]="2" aria-hidden="true"></svg>
               </span>
-              <span class="flex items-center justify-between text-small font-medium text-ink-strong">
+              <div class="mt-8">
+                <p class="text-h3 text-ink-strong">¿Por qué esta zona?</p>
+                <p class="mt-2 text-small leading-relaxed text-ink-soft">
+                  Pregúntale al asistente y te explica lo que dice tu mapa.
+                </p>
+              </div>
+              <span class="mt-6 flex items-center justify-between text-small font-medium text-ink-strong">
                 Preguntar
-                <svg lucideChevronRight [size]="20" aria-hidden="true"></svg>
+                <svg lucideChevronRight [size]="18" aria-hidden="true"></svg>
               </span>
             </button>
-          </div>
+          </section>
 
-          <!-- Tarjetas-tab de macrozonas -->
-          <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            @for (macro of macros; track macro) {
-              <button type="button" (click)="openMacro(macro)" [class]="tabCard">
-                <span class="flex flex-col gap-0.5">
-                  <span>{{ macroLabel(macro) }}</span>
-                  <span class="flex items-center gap-1.5 text-caption font-normal text-muted">
-                    <span class="h-1.5 w-1.5 rounded-full" [class]="dotCls(macro)"></span>
-                    {{ macroPct(macro) }}% {{ macroWord(macro) }}
-                  </span>
-                </span>
-                <svg lucideChevronRight [size]="18" class="text-muted" aria-hidden="true"></svg>
-              </button>
-            }
-          </div>
+          <!-- Riel de macrozonas -->
+          <section class="mt-10">
+            <div class="flex flex-wrap items-end justify-between gap-2">
+              <h2 class="text-h2 text-ink-strong">Tus zonas</h2>
+              <p class="text-small text-muted">Cuatro zonas. Una sola decisión.</p>
+            </div>
+            <div
+              class="no-scrollbar -mx-5 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0"
+            >
+              @for (macro of macros; track macro) {
+                <button
+                  type="button"
+                  (click)="openMacro(macro)"
+                  class="card-lift pressable focus-ring group flex min-w-[230px] snap-start flex-col justify-between rounded-[1.75rem] border border-line bg-card p-5 text-left lg:min-w-0"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <span class="text-h3 text-ink-strong">{{ macroLabel(macro) }}</span>
+                    <span
+                      class="grid h-9 w-9 place-items-center rounded-full bg-sand text-ink transition-colors group-hover:bg-primary group-hover:text-cream"
+                    >
+                      <svg lucideChevronRight [size]="17" aria-hidden="true"></svg>
+                    </span>
+                  </div>
+                  <div class="mt-10">
+                    <p class="index-label text-h1 leading-none text-ink-strong">
+                      {{ macroReadyPct(macro) }}<span class="align-top text-h3">%</span>
+                    </p>
+                    <p class="mt-2 text-caption text-muted">microzonas listas</p>
+                    <p class="mt-3 flex items-center gap-1.5 text-small text-ink-soft">
+                      <span class="h-1.5 w-1.5 rounded-full" [class]="dotCls(macro)"></span>
+                      {{ macroWord(macro) }}
+                    </p>
+                  </div>
+                </button>
+              }
+            </div>
+          </section>
 
           <!-- Mapa -->
           <section class="mt-12">
-            <h2 class="text-h2 font-normal text-ink-strong">
-              Tu mapa de hoy
-            </h2>
+            <div class="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p class="text-caption font-medium tracking-[0.08em] text-muted">01 · Tu mapa</p>
+                <h2 class="mt-2 text-h2 text-ink-strong">Tu mapa de hoy</h2>
+              </div>
+              <div class="w-full max-w-64 sm:w-64">
+                <ui-segmented
+                  [options]="views"
+                  [value]="view()"
+                  label="Modo de mapa"
+                  (changed)="setView($event)"
+                />
+              </div>
+            </div>
 
             @if (zoom(); as z) {
-              <div class="card mt-4 py-2">
+              <div class="card mt-5 py-2">
                 <app-zoom-grid
                   [map]="map"
                   [macro]="z.macro"
@@ -156,17 +241,10 @@ interface ZoomState {
                 />
               </div>
             } @else {
-              <div class="mt-4 w-64">
-                <ui-segmented
-                  [options]="views"
-                  [value]="view()"
-                  label="Modo de mapa"
-                  (changed)="setView($event)"
-                />
-              </div>
-
               @if (view() === 'body') {
-                <div class="card mt-4 overflow-hidden p-2">
+                <div
+                  class="card-feature mt-5 overflow-hidden border border-line bg-gradient-to-b from-sand/80 via-sand/40 to-card p-2 sm:p-3"
+                >
                   <app-body3d
                     [map]="map"
                     [suggestionMacro]="suggestionMacro()"
@@ -174,12 +252,12 @@ interface ZoomState {
                   />
                 </div>
                 <div
-                  class="mt-3 flex flex-wrap items-center gap-2"
+                  class="mt-4 flex flex-wrap items-center gap-2"
                   aria-label="Leyenda de colores del mapa"
                 >
                   @for (item of legend; track item.label) {
                     <span
-                      class="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-2.5 py-1 text-caption font-medium text-muted"
+                      class="inline-flex items-center gap-1.5 rounded-full border border-line/70 bg-card/75 px-3 py-1.5 text-caption font-medium text-ink-soft"
                     >
                       @if (item.star) {
                         <svg
@@ -197,7 +275,7 @@ interface ZoomState {
                   }
                 </div>
               } @else {
-                <div class="mt-4 space-y-3">
+                <div class="mt-5 space-y-3">
                   @for (zone of map.zones; track zone.macro) {
                     <app-macro-grid
                       [zone]="zone"
@@ -210,7 +288,7 @@ interface ZoomState {
             }
           </section>
 
-          <p class="mt-12 text-caption text-muted">
+          <p class="mt-12 text-caption leading-relaxed text-muted">
             Proyecto académico de apoyo a la rotación. No es un dispositivo médico.
           </p>
         }
@@ -238,8 +316,8 @@ export class MapPage {
   protected readonly tabs = PATIENT_TABS;
   protected readonly macros = MACROS;
   protected readonly legend = LEGEND;
-  protected readonly tabCard = TAB_CARD;
   protected readonly userName = computed(() => this.auth.user()?.name ?? 'Insumap');
+  protected readonly firstName = computed(() => this.userName().split(' ')[0] || 'Insumap');
   protected readonly topSuggestion = this.mapStore.topSuggestion;
   protected readonly topSuggestionId = computed(
     () => this.topSuggestion()?.microzone_id ?? null,
@@ -247,6 +325,54 @@ export class MapPage {
   protected readonly suggestionMacro = computed(() => {
     const id = this.topSuggestionId();
     return id ? parseMacro(id) : null;
+  });
+
+  protected readonly todayLabel = (() => {
+    const label = new Intl.DateTimeFormat('es-CO', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    }).format(new Date());
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  })();
+
+  protected readonly readyCount = computed(() => {
+    const map = this.mapStore.map();
+    if (!map) return 0;
+    return map.zones.reduce(
+      (total, zone) =>
+        total +
+        zone.sides.reduce(
+          (sideTotal, side) =>
+            sideTotal + side.cells.filter((cell) => cell.color === 'GREEN').length,
+          0,
+        ),
+      0,
+    );
+  });
+
+  protected readonly totalZones = computed(() => {
+    const map = this.mapStore.map();
+    if (!map) return 0;
+    return map.zones.reduce(
+      (total, zone) => total + zone.sides.reduce((sideTotal, side) => sideTotal + side.cells.length, 0),
+      0,
+    );
+  });
+
+  protected readonly readyPct = computed(() => {
+    const total = this.totalZones();
+    return total ? Math.round((this.readyCount() / total) * 100) : 0;
+  });
+
+  protected readonly heroSubline = computed(() => {
+    const ready = this.readyCount();
+    const total = this.totalZones();
+    const sug = this.topSuggestion();
+    if (sug) {
+      return `${ready} de ${total} microzonas están listas. La próxima dosis va en ${this.describe(sug.microzone_id)}.`;
+    }
+    return `${ready} de ${total} microzonas están listas para tu próxima dosis.`;
   });
 
   protected readonly view = signal<MapView>('body');
@@ -269,13 +395,12 @@ export class MapPage {
     return MACRO_LABEL[macro];
   }
 
-  protected macroPct(macro: MacroCode): number {
+  protected macroReadyPct(macro: MacroCode): number {
     const map = this.mapStore.map();
     if (!map) return 0;
     const cells = macroCells(map, macro);
-    return cells.length
-      ? Math.min(100, Math.round(Math.min(...cells.map((c) => c.ratio)) * 100))
-      : 0;
+    if (!cells.length) return 0;
+    return Math.round((cells.filter((cell) => cell.color === 'GREEN').length / cells.length) * 100);
   }
 
   protected macroWord(macro: MacroCode): string {
