@@ -1,20 +1,25 @@
 import { Component, computed, input } from '@angular/core';
 
-export type RingTone = 'red' | 'yellow' | 'green' | 'honey' | 'ink';
+export type RingTone = 'red' | 'yellow' | 'green' | 'honey' | 'ink' | 'ember';
 
 const TONE: Record<RingTone, string> = {
   red: 'text-mz-red',
   yellow: 'text-mz-yellow',
   green: 'text-mz-green',
   honey: 'text-honey',
-  ink: 'text-ink',
+  ink: 'text-oxblood',
+  ember: 'text-ember-ink',
 };
 
 /** Anillo de recuperación: el dato protagonista con su porcentaje. */
 @Component({
   selector: 'ui-ring',
   template: `
-    <div class="relative inline-flex items-center justify-center" [style.width.px]="size()" [style.height.px]="size()">
+    <div
+      class="relative inline-flex items-center justify-center"
+      [style.width.px]="size()"
+      [style.height.px]="size()"
+    >
       <svg [attr.viewBox]="'0 0 100 100'" class="h-full w-full -rotate-90">
         <circle
           cx="50"
@@ -39,9 +44,9 @@ const TONE: Record<RingTone, string> = {
         />
       </svg>
       <span class="absolute inset-0 flex flex-col items-center justify-center">
-        <span class="tnum text-h3 text-ink-strong">{{ value() }}%</span>
+        <span class="index-label text-h3 leading-none text-ink-strong">{{ value() }}%</span>
         @if (label()) {
-          <span class="text-caption text-muted">{{ label() }}</span>
+          <span class="mt-1 text-caption text-muted">{{ label() }}</span>
         }
       </span>
     </div>

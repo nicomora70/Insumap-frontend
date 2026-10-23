@@ -8,12 +8,13 @@ export interface SegmentOption {
 /**
  * Selector segmentado (2–4 opciones). Única implementación del patrón:
  * antes estaba repetido en mapa, médico, exportes, perfil y zoom.
+ * La opción activa usa la píldora oxblood del sistema de navegación.
  */
 @Component({
   selector: 'ui-segmented',
   template: `
     <div
-      class="grid gap-1 rounded-full border border-line bg-sand p-1"
+      class="grid gap-1 rounded-full border border-line bg-sand/70 p-1.5"
       role="group"
       [attr.aria-label]="label()"
       [style.grid-template-columns]="'repeat(' + options().length + ', minmax(0, 1fr))'"
@@ -43,8 +44,10 @@ export class UiSegmented {
 
   protected cls(id: string): string {
     const on = this.value() === id;
-    return `touch-target pressable focus-ring cursor-pointer rounded-full px-3 py-2 text-small font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 ${
-      on ? 'border border-line bg-card text-ink' : 'text-muted hover:text-ink'
+    return `touch-target pressable focus-ring cursor-pointer rounded-full px-4 py-2 text-small font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 ${
+      on
+        ? 'bg-primary text-cream shadow-[inset_0_1px_0_rgb(255_227_209/0.2)]'
+        : 'text-ink-soft hover:bg-card/60 hover:text-ink'
     }`;
   }
 

@@ -8,14 +8,26 @@ import type { SegmentOption } from './segmented';
 
 export type ExportFormat = 'pdf' | 'xlsx' | 'csv';
 
-/** Tarjeta de exporte del historial (PDF / Excel / CSV), reutilizable por rol. */
+/** Barra de exporte del historial (PDF / Excel / CSV), reutilizable por rol. */
 @Component({
   selector: 'app-export-card',
   imports: [UiBtn, UiSegmented, LucideFileDown],
   template: `
-    <section class="card p-5">
-      <div class="flex items-center gap-3">
-        <div class="min-w-0 max-w-sm flex-1">
+    <section class="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+      <div class="flex min-w-0 items-center gap-3 sm:flex-1">
+        <span
+          class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ember-soft text-ember-ink"
+          aria-hidden="true"
+        >
+          <svg lucideFileDown [size]="18" [strokeWidth]="2" aria-hidden="true"></svg>
+        </span>
+        <div class="min-w-0">
+          <p class="text-small font-medium text-ink-strong">Exportar historial</p>
+          <p class="text-caption text-muted">Elige el formato del archivo.</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="min-w-0 flex-1 sm:w-52">
           <ui-segmented
             [options]="formatOptions"
             [value]="format()"
@@ -26,16 +38,15 @@ export type ExportFormat = 'pdf' | 'xlsx' | 'csv';
         <button
           uiBtn
           type="button"
-          [extraClass]="'shrink-0 py-3'"
+          [extraClass]="'shrink-0 px-4'"
           [disabled]="busy()"
           (click)="download()"
         >
-          <svg lucideFileDown [size]="17" aria-hidden="true"></svg>
           {{ busy() ? '…' : 'Exportar' }}
         </button>
       </div>
       @if (error(); as msg) {
-        <p role="alert" class="mt-2.5 text-small font-medium text-mz-red">{{ msg }}</p>
+        <p role="alert" class="text-small font-medium text-mz-red sm:basis-full">{{ msg }}</p>
       }
     </section>
   `,

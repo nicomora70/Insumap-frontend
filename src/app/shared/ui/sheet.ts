@@ -7,18 +7,20 @@ import {
   output,
   viewChild,
 } from '@angular/core';
+import { LucideX } from '@lucide/angular';
 
 /**
  * Hoja inferior en móvil y diálogo centrado en escritorio.
  * Se encarga de lo que antes faltaba: Escape, foco inicial y atrapado,
- * bloqueo del scroll de fondo, altura máxima con scroll propio y
- * restauración del foco al cerrar.
+ * bloqueo del scroll de fondo, altura máxima con scroll propio,
+ * cierre explícito y restauración del foco al cerrar.
  */
 @Component({
   selector: 'ui-sheet',
+  imports: [LucideX],
   template: `
     <div
-      class="fade-enter fixed inset-0 z-40 bg-ink/30"
+      class="fade-enter fixed inset-0 z-40 bg-oxblood-deep/40 backdrop-blur-[2px]"
       (click)="closed.emit()"
       aria-hidden="true"
     ></div>
@@ -30,10 +32,23 @@ import {
         aria-modal="true"
         [attr.aria-label]="label()"
         tabindex="-1"
-        class="sheet-enter pointer-events-auto flex max-h-[88svh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl border-t border-line bg-card pt-3 shadow-float outline-none lg:max-h-[85vh] lg:rounded-3xl lg:border"
+        class="sheet-enter pointer-events-auto flex max-h-[88svh] w-full max-w-lg flex-col overflow-hidden rounded-t-[2rem] border-t border-line bg-card pt-2 shadow-float outline-none lg:max-h-[85vh] lg:rounded-[2rem] lg:border"
       >
-        <div class="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-sand-deep lg:hidden" aria-hidden="true"></div>
-        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <div class="grid grid-cols-[1fr_auto_1fr] items-center px-4 pb-2">
+          <span aria-hidden="true"></span>
+          <div class="mx-auto h-1 w-10 rounded-full bg-sand-deep lg:hidden" aria-hidden="true"></div>
+          <button
+            type="button"
+            (click)="closed.emit()"
+            aria-label="Cerrar"
+            class="pressable focus-ring col-start-3 ml-auto grid h-11 w-11 cursor-pointer place-items-center rounded-full bg-sand text-ink transition-colors hover:bg-sand-deep"
+          >
+            <svg lucideX [size]="18" [strokeWidth]="2.2" aria-hidden="true"></svg>
+          </button>
+        </div>
+        <div
+          class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-1"
+        >
           <ng-content />
         </div>
       </div>

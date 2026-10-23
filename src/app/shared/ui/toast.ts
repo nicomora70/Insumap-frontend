@@ -15,14 +15,15 @@ import { UiBtn } from './button';
         role="status"
       >
         <div
-          class="chrome-translucent shadow-float flex items-center justify-between gap-3 rounded-full border border-line px-5 py-3"
+          class="panel-ink flex items-center justify-between gap-3 rounded-full border border-white/10 px-5 py-3 shadow-float"
         >
-          <p class="text-small font-medium text-ink">{{ t.text }}</p>
+          <p class="text-small font-medium text-cream">{{ t.text }}</p>
           @if (t.canUndo) {
             <button
               uiBtn
+              variant="soft"
               type="button"
-              [extraClass]="'shrink-0 px-4 py-2 text-caption'"
+              [extraClass]="'shrink-0 px-4 py-2 text-caption text-ink'"
               [disabled]="map.undoPending()"
               (click)="undo()"
             >

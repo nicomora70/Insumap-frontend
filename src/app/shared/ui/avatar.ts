@@ -1,14 +1,14 @@
 import { Component, computed, input } from '@angular/core';
 
 const TONES = [
-  'bg-sand text-ink',
-  'bg-clay-soft text-clay',
+  'bg-oxblood text-cream',
+  'bg-ember-soft text-ember-ink',
   'bg-honey-soft text-olive',
-  'bg-olive-soft text-olive',
+  'bg-clay-soft text-clay',
   'bg-sand-deep text-ink',
 ];
 
-/** Avatar circular con la inicial sobre tonos tierra (estilo hims). */
+/** Avatar circular con la inicial sobre tonos tierra (estilo editorial cálido). */
 @Component({
   selector: 'ui-avatar',
   template: '{{ initial() }}',
