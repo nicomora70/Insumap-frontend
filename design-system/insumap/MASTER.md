@@ -10,8 +10,8 @@
 **Proyecto:** Insumap — rotación de zonas de inyección de insulina
 **Categoría:** salud / bienestar, uso móvil diario, contexto clínico
 **Stack:** Angular 20 (standalone + signals) · Tailwind 4 · Lucide · three.js · PWA
-**Lenguaje visual:** editorial cálido (referencia: hims.com) implementado con tokens propios
-**Última revisión:** 2026-10-18
+**Lenguaje visual:** editorial cálido con capa Cleo (oxblood + ember), implementado con tokens propios
+**Última revisión:** 2026-10-23
 
 ---
 
@@ -32,6 +32,8 @@ escrita**. Estas son nuestras razones.
 | Sombra bajo cada tarjeta | `banned` | **Solo en capas flotantes** | Las tarjetas en reposo no proyectan sombra. Solo el toast, las etiquetas del 3D y las hojas elevadas usan sombra **tintada cálida** (`rgb(31 26 20 / …)`), nunca negra. |
 | Lucide como set único | tell en `soft`/`minimalist` | **Se mantiene** | Ya está en todo el código, con grosor de trazo consistente y tree-shaking por icono. Cambiar a Phosphor es un costo transversal alto por una ganancia marginal. Se reevalúa si aparece un problema real de legibilidad. |
 | CTA en píldora (`rounded-full`) | prohibido en `minimalist` | **Se mantiene** | Es la firma del lenguaje editorial cálido de la referencia y da continuidad entre chips, botones y campos. |
+| Dos familias (Instrument Sans + DM Sans) | tell de "look generado" | **Se acepta con límites** | Instrument Sans solo hace titulares (`display`, `h1`, `h2`); DM Sans hace UI, formularios y texto. La separación es funcional, no decorativa: el display necesita más carácter y la UI más legibilidad. |
+| Naranja ember `#ff8e3e` | acento de la referencia Cleo | **Solo decorativo** | Sobre crema da 2.12:1. Se usa en rellenos, subrayados y sobre oxblood (6.16:1). Para texto destacado sobre crema se usa `ember-ink` `#c2410c` (4.80:1). |
 | Fotos de banco de imágenes | — | **Prohibido en este proyecto** | Contexto de salud: una foto de archivo resta credibilidad. Se usa ilustración SVG propia del cuerpo/mapa, o nada. |
 | Datos de ejemplo tipo "John Doe" | tell de copy | **Prohibido** | Nombres realistas latinos y horas verosímiles en demos, capturas y datos semilla. |
 
@@ -61,29 +63,36 @@ hay excepción.
 
 | Token | Hex | Uso |
 |---|---|---|
-| `--color-app-bg` | `#fbf8f5` | Fondo de la app |
-| `--color-sand` | `#f2ede6` | Bloques secundarios, segmentados, filas alternas |
-| `--color-sand-deep` | `#e7ded2` | Hover de arena, rieles |
-| `--color-card` | `#ffffff` | Tarjetas y hojas |
-| `--color-line` | `#e9e1d6` | Hairline estructural |
-| `--color-cocoa` / `--color-cocoa-soft` | `#3e2e22` / `#5a4530` | Momentos destacados (dato del día, panel de auth en escritorio) |
-| `--color-caramel` / `--color-honey` | `#a97c3f` / `#f9b859` | Gradiente de la tarjeta secundaria destacada |
-| `--color-cream` | `#f7f2ea` | Texto sobre cocoa/caramel |
+| `--color-app-bg` | `#f8f6f2` | Fondo de la app (crema Cleo) |
+| `--color-sand` | `#efe8de` | Bloques secundarios, segmentados, filas alternas |
+| `--color-sand-deep` | `#e2d8ca` | Hover de arena, rieles |
+| `--color-card` | `#fffdfa` | Tarjetas y hojas (blanco cálido) |
+| `--color-line` | `#e6ded2` | Hairline estructural |
+| `--color-cocoa` / `--color-cocoa-soft` | `#3a1714` / `#552722` | Profundidad del marrón vino en gradientes |
+| `--color-oxblood` / `--color-oxblood-deep` | `#47201c` / `#2f100c` | Marca, CTA, nav activo y paneles destacados |
+| `--color-ember` / `--color-ember-ink` / `--color-ember-soft` | `#ff8e3e` / `#c2410c` / `#ffe3d1` | Acento decorativo / texto destacado / fondo de acento |
+| `--color-caramel` / `--color-honey` | `#a97c3f` / `#f9b859` | Zona sugerida y avisos, nunca como texto de marca |
+| `--color-cream` | `#f8f6f2` | Texto sobre oxblood/cocoa |
 
 ### 2.2 Tinta
 
 | Token | Hex | Uso |
 |---|---|---|
-| `--color-ink` | `#1f1a14` | Texto principal |
-| `--color-ink-strong` | `#14100b` | Titulares |
-| `--color-muted` | `#8a7e6f` | Texto secundario — **en revisión de contraste** (ver §8) |
-| `--color-primary` | `#1f1a14` | Píldora negra (CTA principal) |
-| `--color-ring` | `#b98267` | Anillo de foco |
+| `--color-ink` | `#47201c` | Texto principal (13.05:1 sobre crema) |
+| `--color-ink-strong` | `#2f100c` | Titulares |
+| `--color-muted` | `#746958` | Texto secundario (4.98:1 sobre crema) |
+| `--color-primary` | `#47201c` | CTA principal y píldora de navegación |
+| `--color-primary-strong` | `#2f100c` | Hover del CTA |
+| `--color-ring` | `#c2410c` | Anillo de foco (4.80:1) |
 
 ### 2.3 Acentos (presupuesto: máximo 2 por pantalla)
 
-`--color-honey` `#f9b859` · `--color-clay` `#b98267` · `--color-olive` `#9c702f`
-Cada uno con su variante `-soft` para fondos de aviso.
+`--color-honey` `#f9b859` · `--color-clay` `#b98267` · `--color-olive` `#7a5518` ·
+`--color-ember` `#ff8e3e` (decorativo) · `--color-ember-ink` `#c2410c` (texto)
+
+Cada uno con su variante `-soft` para fondos de aviso. El acento de marca es **uno por
+pantalla**: una palabra en `ember-ink` sobre crema o en `ember` sobre oxblood. El resto de la
+pantalla vive en tinta y tono.
 
 ### 2.4 Recuperación (semántico, no decorativo)
 
@@ -99,31 +108,35 @@ En el 3D el velo puede subir de saturación para leerse sobre el músculo, pero 
 
 ### 2.5 Prohibido
 
-Neones (`#2fd8ff`, `#2ee872`), gradientes morado/azul, texto blanco sobre ámbar, colores fuera de
+Neones (`#2fd8ff`, `#2ee872`), gradientes morado/azul, texto blanco sobre ámbar, `ember`
+(`#ff8e3e`) como texto sobre crema, más de una palabra acentuada por pantalla, colores fuera de
 los tokens, hex sueltos en plantillas (si hace falta un color nuevo, se agrega al `@theme`).
 
 ---
 
 ## 3. Tipografía
 
-**Fuente:** DM Sans (400/500/600/700), variable por peso óptico. Sin serif, sin segunda familia.
+**Familias:** Instrument Sans para `display`, `h1` y `h2`; DM Sans para UI, formularios y texto.
+La segunda familia es una excepción documentada (§0): el display necesita el carácter de la
+referencia Cleo y la UI necesita la legibilidad de DM Sans. Sin serif.
 
 ### 3.1 Escala implementada (tokens en `src/styles.css`)
 
 | Token | Tamaño | Peso | Uso |
 |---|---|---|---|
-| `text-display` | `clamp(36px → 56px)` | 400 | Titular del mapa |
-| `text-h1` | `clamp(32px → 40px)` | 400/500 | Título de pantalla |
-| `text-h2` | `clamp(28px → 34px)` | 400 | Sección mayor y tarjetas destacadas en `sm+` |
-| `text-h3` | 20px | 500 | Título de tarjeta; en móvil también las tarjetas destacadas |
+| `text-display` | `clamp(48px → 88px)` | 500 | Titular de marca: mapa e inicio |
+| `text-h1` | `clamp(40px → 56px)` | 500 | Título de pantalla |
+| `text-h2` | `clamp(30px → 44px)` | 500 | Sección mayor |
+| `text-h3` | 24px | 500 | Título de tarjeta destacada |
 | `text-title` | 17px | 500 | Encabezado de fila o de tarjeta compacta |
 | `text-body` | 16px | 400 | Texto corrido, inputs y botones |
 | `text-small` | 14px | 400/500 | Texto secundario, metadatos |
 | `text-caption` | 12px | 500 | Etiquetas, píldoras, pies |
-| `text-eyebrow` | 11px + tracking 0.14em | 600 | Mayúsculas. Máximo 1 por pantalla (§0) |
+| `text-eyebrow` | 11px + tracking 0.16em | 600 | Mayúsculas. Máximo 1 por pantalla (§0) |
 
 Regla: máximo **cinco tamaños visibles por pantalla**. Si un tamaño nuevo no está en esta
-tabla, se agrega aquí primero (y se justifica).
+tabla, se agrega aquí primero (y se justifica). El display solo aparece en el mapa/inicio y en
+auth; las pantallas de tarea usan `h1` como máximo.
 
 ### 3.2 Reglas
 
@@ -132,6 +145,8 @@ tabla, se agrega aquí primero (y se justifica).
   Excepción única: el **código de vínculo** médico-paciente (se lee y se dicta carácter a
   carácter, la mono ayuda a distinguir `0/O` y `1/l`).
 - **Titulares** llevan `text-wrap: balance` cuando ocupan más de una línea.
+- **Una sola palabra acentuada por pantalla.** Sobre crema se usa `ember-ink`; sobre oxblood,
+  `ember`. El subrayado `.accent-mark` es opcional y se dibuja una vez.
 - Los párrafos se limitan a ~65 caracteres (`max-w-prose`).
 - Los enlaces en texto van subrayados con `underline-offset-4`; no se confía solo en el color.
 
@@ -157,15 +172,16 @@ tabla, se agrega aquí primero (y se justifica).
 
 ## 5. Superficies, radios, sombras y capas
 
-**Superficies:** 4 niveles y ni uno más — `app-bg` → `sand` → `card` → `cocoa`.
+**Superficies:** 4 niveles y ni uno más — `app-bg` → `sand` → `card` → `oxblood`.
 Cada nivel existe solo si comunica jerarquía; si no, es espacio.
 
 **Radios:** `12px` (chips pequeños) · `16px` (inputs, botones cuadrados) · `24px` (tarjetas, hojas) ·
-`32px` (bloques destacados) · `full` (píldoras). Los radios anidados son concéntricos
-(radio interno = radio externo − padding).
+`32px` (`card-feature`, bloques destacados) · `full` (píldoras). Los radios anidados son
+concéntricos (radio interno = radio externo − padding).
 
-**Sombras:** solo en elementos flotantes (toast, hoja, etiquetas sobre el 3D). Siempre tintadas:
-`rgb(31 26 20 / 0.06–0.10)`. Prohibido `shadow-md/lg/xl` por defecto.
+**Sombras:** solo en elementos flotantes (toast, hoja, etiquetas sobre el 3D) y al hacer hover
+sobre una tarjeta interactiva. Siempre tintadas:
+`rgb(71 32 28 / 0.06–0.12)`. Prohibido `shadow-md/lg/xl` por defecto.
 
 **Capas (z-index):** `sticky header: 30` · `hoja/overlay: 40` · `toast: 40` · `menú móvil: 50`.
 No se inventan valores intermedios.
@@ -184,9 +200,12 @@ No se inventan valores intermedios.
 
 - Solo se animan `transform` y `opacity`. Nunca `top/left/width/height`.
 - Las listas entran escalonadas (`--index` × 60ms), nunca todas de golpe.
-- Un solo gesto característico por pantalla; no se anima todo.
+- Un solo gesto característico por pantalla; no se anima todo. El gesto de marca es el
+  subrayado `.accent-mark`, que se dibuja una vez.
 - `@media (prefers-reduced-motion: reduce)` deja todo en reposo, sin excepción.
-- `backdrop-filter` solo en elementos fijos o pegajosos (header, overlay). Nunca en contenedores que hacen scroll.
+- `backdrop-filter` solo en elementos fijos o pegajosos (header, barra inferior, overlay, chips
+  flotantes). Nunca en contenedores que hacen scroll.
+- Prohibido scroll hijacking, marquesinas infinitas, parallax y cursores personalizados.
 
 ---
 
@@ -194,7 +213,7 @@ No se inventan valores intermedios.
 
 | Componente | Archivo | Cuándo |
 |---|---|---|
-| `uiBtn` | `shared/ui/button.ts` | Toda acción. Variantes: `primary` (miel), `dark` (píldora negra), `outline`, `soft`, `ghost`, `danger` |
+| `uiBtn` | `shared/ui/button.ts` | Toda acción. Variantes: `primary` (oxblood), `dark` (alias oxblood), `outline`, `soft`, `ghost`, `danger` |
 | `ui-avatar` | `shared/ui/avatar.ts` | Personas. Tonos tierra determinísticos por inicial |
 | `ui-pill` | `shared/ui/status-pill.ts` | Estado de recuperación. Única fuente de la palabra + ícono + color |
 | `ui-segmented` | `shared/ui/segmented.ts` | Selector de 2–4 opciones. Única implementación del patrón |
@@ -213,19 +232,23 @@ No se inventan valores intermedios.
 
 | Rol | Color | Dónde |
 |---|---|---|
-| Acción principal | **Ámbar** (`uiBtn` por defecto) | Registrar, guardar, exportar, entrar, generar código |
-| Navegación y selección | **Píldora negra** | Enlace activo del shell, elección de rol, burbuja del usuario |
+| Acción principal | **Oxblood** (`uiBtn` por defecto) | Registrar, guardar, exportar, entrar, generar código |
+| Navegación y selección | **Píldora oxblood** | Enlace activo del shell, elección de rol, burbuja del usuario |
+| Acento y sugerencia | **Miel** (`honey`) | Zona sugerida, avisos y estados que no son CTA |
 | Acción destructiva | Rojo suave | Revocar, quitar dosis, cerrar sesión |
 
-Nunca dos botones ámbar compitiendo en la misma pantalla.
+Nunca dos botones oxblood compitiendo en la misma pantalla. Sobre un panel oxblood, el CTA
+principal usa la variante clara (`soft`/`glass`), no oxblood sobre oxblood.
 
 ---
 
 ## 8. Accesibilidad
 
-- **Contraste mínimo 4.5:1** en texto normal y 3:1 en texto ≥24px. `--color-muted` sobre crema está en
-  **3.75:1**: se oscurece antes de dar por cerrada cualquier pantalla.
-- **Prohibido** texto claro sobre ámbar o miel (contraste <2:1). Sobre esos fondos, siempre tinta oscura.
+- **Contraste mínimo 4.5:1** en texto normal y 3:1 en texto ≥24px. `--color-muted` sobre crema
+  está en **4.98:1**; `--color-ink` en **13.05:1**; `--color-ember-ink` en **4.80:1**.
+- **Prohibido** texto claro sobre ámbar o miel (contraste <2:1). Sobre esos fondos, siempre tinta
+  oscura. `--color-ember` (`#ff8e3e`) solo se usa como relleno o sobre oxblood; sobre crema da
+  **2.12:1**.
 - Foco visible siempre (`3px` con `--color-ring` y `offset` de 2px). No se quita el outline.
 - Objetivos de 44×44px como mínimo, con separación de 8px entre ellos.
 - Un solo `h1` por pantalla; jerarquía de encabezados sin saltos.
@@ -239,6 +262,7 @@ Nunca dos botones ámbar compitiendo en la misma pantalla.
 
 - Emojis como iconos o en copy.
 - Texto claro sobre ámbar/miel; `muted` para texto importante.
+- `ember` como texto sobre crema; más de una palabra acentuada por pantalla.
 - Amarillo representado con otro tono (cian, azul) o estados sin ícono/palabra.
 - Sombras duras, negras o por defecto de Tailwind.
 - `h-screen` (usar `min-h-svh`/`min-h-dvh`), `overflow-x` accidental en móvil.
@@ -246,6 +270,7 @@ Nunca dos botones ámbar compitiendo en la misma pantalla.
 - Más de un eyebrow por pantalla; mayúsculas en frases.
 - Monoespaciada para micro-etiquetas o identificadores.
 - Estados instantáneos sin transición; animación de propiedades de layout.
+- Scroll hijacking, marquesinas infinitas, parallax y cursores personalizados.
 - Iconos solo sin nombre accesible; botones sin `cursor-pointer`; foco invisible.
 - Emojis, texto de relleno, nombres tipo "John Doe" o datos clínicos inventados.
 
@@ -254,8 +279,9 @@ Nunca dos botones ámbar compitiendo en la misma pantalla.
 ## 10. Checklist antes de entregar
 
 - [ ] Sin amarillo sustituido por otro color; todo estado con color + ícono + patrón + palabra
-- [ ] Contraste ≥4.5:1 verificado en el texto secundario y sobre fondos de aviso
-- [ ] Máximo 1 eyebrow, 3 cajas con borde y 2 acentos por pantalla
+- [ ] Contraste ≥4.5:1 verificado en `muted`, `ember-ink` y sobre fondos de aviso
+- [ ] `ember` solo como relleno o sobre oxblood; nunca como texto sobre crema
+- [ ] Máximo 1 eyebrow, 1 palabra acentuada, 3 cajas con borde y 2 acentos por pantalla
 - [ ] Cinco tamaños de texto visibles como máximo; `tabular-nums` en datos
 - [ ] Un solo `h1`, encabezados sin saltos, `lang="es"`, skip-link
 - [ ] Foco visible y navegación completa por teclado (incluido el mapa en modo Lista)
@@ -264,3 +290,12 @@ Nunca dos botones ámbar compitiendo en la misma pantalla.
 - [ ] `prefers-reduced-motion` deja todo en reposo
 - [ ] Sin emojis, sin hex sueltos, sin monoespaciada en etiquetas
 - [ ] Una sola tarjeta blanca con borde cuando no aporta jerarquía (paso a `sand` o espacio)
+- [ ] Un solo CTA oxblood por pantalla; sobre panel oscuro, CTA claro
+
+---
+
+## 11. Bitácora
+
+| Fecha | Cambio |
+|---|---|
+| 2026-10-23 | Capa Cleo: oxblood + ember, Instrument Sans en display, escala editorial 48→88, botón con brillo interior, subrayado de acento y superficies cálidas. Se documentan excepciones de doble familia y naranja decorativo. |
