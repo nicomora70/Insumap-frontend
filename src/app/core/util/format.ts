@@ -38,13 +38,6 @@ export function describeLocation(microzoneId: string, gridSize: number): string 
   return `${macroLabel[macro] ?? macro} ${sideLabel}, ${vertical} y ${horizontal}`;
 }
 
-export function formatHours(hours: number): string {
-  if (hours <= 0) return 'lista ahora';
-  if (hours < 1) return `lista en ${Math.round(hours * 60)} min`;
-  if (hours < 48) return `lista en ${Math.round(hours)} h`;
-  return `lista en ${Math.round(hours / 24)} días`;
-}
-
 const STATUS_LABEL: Record<InjectionOut['status'], { text: string; className: string }> = {
   REGISTERED: {
     text: 'Registrada',

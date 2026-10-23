@@ -3,31 +3,25 @@ import { LucideFileDown } from '@lucide/angular';
 import { toApiError } from '../../core/api/api-error';
 import { ApiService } from '../../core/api/api.service';
 import { UiBtn } from './button';
+import { UiSegmented } from './segmented';
+import type { SegmentOption } from './segmented';
 
 export type ExportFormat = 'pdf' | 'xlsx' | 'csv';
 
 /** Tarjeta de exporte del historial (PDF / Excel / CSV), reutilizable por rol. */
 @Component({
   selector: 'app-export-card',
-  imports: [UiBtn, LucideFileDown],
+  imports: [UiBtn, UiSegmented, LucideFileDown],
   template: `
     <section class="card p-5">
       <div class="flex items-center gap-3">
-        <div
-          class="grid flex-1 grid-cols-3 gap-1 rounded-full border border-line bg-sand p-1"
-          role="group"
-          aria-label="Formato de exporte"
-        >
-          @for (f of formats; track f) {
-            <button
-              type="button"
-              [attr.aria-pressed]="format() === f"
-              (click)="format.set(f)"
-              [class]="fmtCls(f)"
-            >
-              {{ f }}
-            </button>
-          }
+        <div class="min-w-0 max-w-sm flex-1">
+          <ui-segmented
+            [options]="formatOptions"
+            [value]="format()"
+            label="Formato de exporte"
+            (changed)="setFormat($event)"
+          />
         </div>
         <button
           uiBtn
@@ -41,7 +35,7 @@ export type ExportFormat = 'pdf' | 'xlsx' | 'csv';
         </button>
       </div>
       @if (error(); as msg) {
-        <p role="alert" class="mt-2.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+        <p role="alert" class="mt-2.5 text-small font-medium text-mz-red">{{ msg }}</p>
       }
     </section>
   `,
@@ -52,16 +46,17 @@ export class ExportCard {
 
   private readonly api = inject(ApiService);
 
-  protected readonly formats: ExportFormat[] = ['pdf', 'xlsx', 'csv'];
+  protected readonly formatOptions: SegmentOption[] = [
+    { id: 'pdf', label: 'PDF' },
+    { id: 'xlsx', label: 'XLSX' },
+    { id: 'csv', label: 'CSV' },
+  ];
   protected readonly format = signal<ExportFormat>('pdf');
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  protected fmtCls(f: ExportFormat): string {
-    const on = this.format() === f;
-    return `touch-target focus-ring cursor-pointer rounded-full px-3 py-2 text-[13px] font-medium uppercase transition-colors ${
-      on ? 'border border-line bg-card text-ink' : 'text-muted hover:text-ink'
-    }`;
+  protected setFormat(id: string): void {
+    if (id === 'pdf' || id === 'xlsx' || id === 'csv') this.format.set(id);
   }
 
   protected download(): void {

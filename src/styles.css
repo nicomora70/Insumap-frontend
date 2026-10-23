@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /* ============================================================
-   Insumap · Design tokens — lenguaje hims.com
-   Cálido, editorial, píldoras, hairlines, sin sombras duras.
+   Insumap · Design tokens — lenguaje editorial cálido
+   Fuente de verdad: este bloque @theme. Ver design-system/insumap/MASTER.md
    ============================================================ */
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial,
@@ -19,24 +19,26 @@
   --color-ink: #1f1a14;
   --color-ink-strong: #14100b;
   --color-ink-soft: #443320;
-  --color-muted: #8a7e6f;
+  /* Oscurecido para cumplir 4.5:1 sobre crema (antes #8a7e6f → 3.75:1). */
+  --color-muted: #746958;
 
-  /* --- Acentos tierra (hims: amber / peru / olive) --- */
+  /* --- Acentos tierra --- */
   --color-honey: #f9b859;
   --color-honey-deep: #eda73f;
   --color-honey-soft: #fcefd9;
   --color-clay: #b98267;
   --color-clay-soft: #f4e4dc;
-  --color-olive: #9c702f;
+  /* Oscurecido para texto sobre honey-soft (antes #9c702f → 3.87:1). */
+  --color-olive: #7a5518;
   --color-olive-soft: #f1e8d5;
 
-  /* --- Marrón oscuro (secciones y tarjetas destacadas de la referencia) --- */
+  /* --- Marrón oscuro (momentos destacados) --- */
   --color-cocoa: #3e2e22;
   --color-cocoa-soft: #5a4530;
   --color-caramel: #a97c3f;
   --color-cream: #f7f2ea;
 
-  /* --- CTA principal: ámbar con tinta oscura --- */
+  /* --- CTA principal --- */
   --color-primary: #1f1a14;
   --color-primary-strong: #000000;
   --color-ring: #b98267;
@@ -49,13 +51,54 @@
   --color-mz-green: #2f6b4f;
   --color-mz-green-soft: #e2efe4;
 
-  /* --- Cuerpo 3D --- */
-  --color-body: #e9dcc9;
-  --color-body-red: #d99c8b;
-  --color-body-yellow: #eec98f;
-  --color-body-green: #a9c3a0;
+  /* ============================================================
+     Escala tipográfica: 8 roles, tamaños fluidos donde aplica.
+     Regla: máximo 5 tamaños visibles por pantalla.
+     Nota: no existe --color-body a propósito: chocaría con text-body.
+     ============================================================ */
+  --text-display: clamp(2.25rem, 1.55rem + 2.6vw, 3.5rem);
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.025em;
+
+  --text-h1: clamp(2rem, 1.55rem + 1.55vw, 2.5rem);
+  --text-h1--line-height: 1.1;
+  --text-h1--letter-spacing: -0.02em;
+
+  --text-h2: clamp(1.75rem, 1.5rem + 0.85vw, 2.125rem);
+  --text-h2--line-height: 1.15;
+  --text-h2--letter-spacing: -0.02em;
+
+  --text-h3: 1.25rem;
+  --text-h3--line-height: 1.25;
+  --text-h3--letter-spacing: -0.01em;
+
+  --text-title: 1.0625rem;
+  --text-title--line-height: 1.35;
+  --text-title--letter-spacing: -0.005em;
+
+  --text-body: 1rem;
+  --text-body--line-height: 1.5;
+
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.45;
+
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+
+  --text-eyebrow: 0.6875rem;
+  --text-eyebrow--line-height: 1.2;
+  --text-eyebrow--letter-spacing: 0.14em;
+
+  /* --- Elevación: solo capas flotantes, siempre tintada --- */
+  --shadow-float: 0 12px 32px rgb(31 26 20 / 0.1);
+  --shadow-lift: 0 4px 16px rgb(31 26 20 / 0.08);
 
   --ease-soft: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Utilidad para datos numéricos: horas, porcentajes, IDs. */
+@utility tnum {
+  font-variant-numeric: tabular-nums;
 }
 
 :root {
@@ -73,7 +116,7 @@ body {
   font-family: var(--font-sans);
   background: var(--color-app-bg);
   color: var(--color-ink);
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1.5;
   margin: 0;
 }
@@ -179,6 +222,22 @@ h2 {
   animation: insumap-fade-in 0.2s ease-out both;
 }
 
+/* Entrada escalonada de listas (usar con style="--index: n") */
+@keyframes insumap-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.stagger-item {
+  animation: insumap-rise 0.5s var(--ease-soft) both;
+  animation-delay: calc(var(--index, 0) * 60ms);
+}
+
 /* Hoja inferior (bottom sheet) */
 @keyframes insumap-sheet-up {
   from {
@@ -194,14 +253,15 @@ h2 {
 @media (prefers-reduced-motion: reduce) {
   .page-enter,
   .fade-enter,
-  .sheet-enter {
+  .sheet-enter,
+  .stagger-item {
     animation: none;
   }
 }
 
 /* Etiqueta editorial (eyebrow) del sistema */
 .eyebrow {
-  font-size: 11px;
+  font-size: var(--text-eyebrow);
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;

@@ -9,11 +9,11 @@ import { CELL_STYLE, COLOR_LABEL } from '../../core/util/format';
   imports: [LucideX, LucideTriangleAlert, LucideCheck],
   template: `
     <section class="card p-5" [attr.aria-label]="zone().label">
-      <h2 class="text-[17px] text-ink-strong">{{ zone().label }}</h2>
+      <h2 class="text-title text-ink-strong">{{ zone().label }}</h2>
       <div class="mt-4 grid grid-cols-2 gap-4">
         @for (s of zone().sides; track s.side) {
           <div>
-            <p class="mb-1.5 text-[12px] font-medium text-muted">
+            <p class="mb-1.5 text-caption font-medium text-muted">
               {{ s.side === 'I' ? 'Izquierdo' : 'Derecho' }}
             </p>
             <div

@@ -12,7 +12,7 @@ import { HistoryList } from '../history/history-list';
   template: `
     <app-shell [userName]="userName()" [tabs]="tabs" active="historial">
       <main class="page-enter space-y-4">
-        <h1 class="text-[32px] font-normal tracking-[-0.02em] text-ink-strong sm:text-[40px]">
+        <h1 class="text-h1 font-normal text-ink-strong">
           Tu historial
         </h1>
         <app-export-card basePath="/history" filename="insumap-historial" />

@@ -35,7 +35,7 @@ export class UiPill {
 
   protected readonly cls = computed(
     () =>
-      'inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium ' +
+      'inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-caption font-medium ' +
       META[this.color()].classes,
   );
 }

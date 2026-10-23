@@ -15,13 +15,13 @@ import { ActivatedRoute } from '@angular/router';
   template: `
     <app-shell [userName]="userName()" [tabs]="tabs" active="ayuda">
       <main class="page-enter flex min-h-[70svh] flex-col pb-10">
-        <h1 class="text-[32px] font-normal tracking-[-0.02em] text-ink-strong sm:text-[40px]">
+        <h1 class="text-h1 font-normal text-ink-strong">
           Asistente
         </h1>
         <div class="mt-4"></div>
         @if (store.degraded()) {
           <p
-            class="mb-3 flex items-start gap-2.5 rounded-2xl bg-honey-soft px-4 py-3 text-[13px] font-medium text-olive"
+            class="mb-3 flex items-start gap-2.5 rounded-2xl bg-honey-soft px-4 py-3 text-small font-medium text-olive"
           >
             <svg lucideTriangleAlert [size]="16" class="mt-0.5 shrink-0" aria-hidden="true"></svg>
             Asistente con respuesta básica (sin IA por ahora). La sugerencia sigue siendo la del
@@ -44,7 +44,7 @@ import { ActivatedRoute } from '@angular/router';
 
         <ul class="space-y-2.5" aria-live="polite">
           @if (store.messages().length === 0 && !store.loading()) {
-            <li class="card p-5 text-[14px] leading-relaxed text-muted">
+            <li class="card p-5 text-small leading-relaxed text-muted">
               Pregúntame dónde aplicarte la próxima dosis o qué significan los colores. Nunca te
               diré dosis: eso lo define tu médico.
             </li>
@@ -56,14 +56,14 @@ import { ActivatedRoute } from '@angular/router';
           }
           @if (store.sending()) {
             <li class="flex justify-start" aria-label="El asistente está respondiendo">
-              <p class="card animate-pulse rounded-bl-lg px-5 py-3 text-[15px] text-muted">Escribiendo…</p>
+              <p class="card animate-pulse rounded-bl-lg px-5 py-3 text-body text-muted">Escribiendo…</p>
             </li>
           }
         </ul>
         <div #bottom></div>
 
         @if (store.error() && store.messages().length > 0) {
-          <p role="alert" class="mt-2.5 text-[13px] font-medium text-mz-red">{{ store.error() }}</p>
+          <p role="alert" class="mt-2.5 text-small font-medium text-mz-red">{{ store.error() }}</p>
         }
 
         <div class="mt-4 flex flex-wrap gap-2">
@@ -72,7 +72,7 @@ import { ActivatedRoute } from '@angular/router';
               type="button"
               [disabled]="store.sending()"
               (click)="ask(q)"
-              class="pressable focus-ring cursor-pointer rounded-full border border-line bg-card px-4 py-2 text-[13px] font-medium text-ink hover:bg-sand disabled:opacity-50"
+              class="pressable focus-ring cursor-pointer rounded-full border border-line bg-card px-4 py-2 text-small font-medium text-ink hover:bg-sand disabled:opacity-50"
             >
               {{ q }}
             </button>
@@ -86,7 +86,7 @@ import { ActivatedRoute } from '@angular/router';
             maxlength="500"
             placeholder="Ej. ¿Dónde me toca hoy?"
             aria-label="Tu pregunta al asistente"
-            class="touch-target focus-ring min-w-0 flex-1 rounded-full border border-line bg-card px-5 text-[15px] text-ink outline-none placeholder:text-muted/80 focus:border-clay"
+            class="touch-target focus-ring min-w-0 flex-1 rounded-full border border-line bg-card px-5 text-body text-ink outline-none placeholder:text-muted/80 focus:border-clay"
           />
           <button
             type="submit"
@@ -97,7 +97,7 @@ import { ActivatedRoute } from '@angular/router';
             <svg lucideSendHorizontal [size]="19" class="mx-auto" aria-hidden="true"></svg>
           </button>
         </form>
-        <p class="mt-3 px-1 text-[12px] text-muted">
+        <p class="mt-3 px-1 text-caption text-muted">
           Insumap es un proyecto académico de apoyo a la rotación; no es un dispositivo médico.
         </p>
       </main>
@@ -143,8 +143,8 @@ export class AssistantPage {
 
   protected bubbleCls(m: AssistantMessageOut): string {
     return m.role === 'USER'
-      ? 'max-w-[85%] rounded-3xl rounded-br-lg bg-primary px-5 py-3 text-[15px] leading-relaxed text-white'
-      : 'card max-w-[85%] rounded-3xl rounded-bl-lg px-5 py-3 text-[15px] leading-relaxed text-ink';
+      ? 'max-w-[85%] rounded-3xl rounded-br-lg bg-primary px-5 py-3 text-body leading-relaxed text-white'
+      : 'card max-w-[85%] rounded-3xl rounded-bl-lg px-5 py-3 text-body leading-relaxed text-ink';
   }
 
   protected onInput(event: Event): void {

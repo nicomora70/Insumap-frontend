@@ -6,6 +6,7 @@ import type { CellColor, CellOut } from '../../core/data/types';
 import { COLOR_WORD, formatAppliedAt } from '../../core/util/format';
 import { UiBtn } from '../../shared/ui/button';
 import { INPUT_SM } from '../../shared/ui/classes';
+import { UiSheet } from '../../shared/ui/sheet';
 
 export interface RegisteredEvent {
   injectionId: string;
@@ -29,19 +30,12 @@ const MACRO_NAME: Record<string, string> = {
 /** P05: hoja inferior de la microzona con registro y advertencia (R04). */
 @Component({
   selector: 'app-microzone-sheet',
-  imports: [UiBtn, LucideTriangleAlert],
+  imports: [UiBtn, UiSheet, LucideTriangleAlert],
   template: `
-    <div class="fade-enter fixed inset-0 z-30 bg-ink/30" (click)="close.emit()" aria-hidden="true"></div>
-    <div
-      role="dialog"
-      aria-modal="true"
-      [attr.aria-label]="'Microzona ' + cell().id"
-      class="sheet-enter fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg rounded-t-3xl border-t border-line bg-card px-6 pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-3"
-    >
-      <div class="mx-auto mb-4 h-1 w-10 rounded-full bg-sand-deep" aria-hidden="true"></div>
-      <p class="text-[13px] text-muted">{{ header() }}</p>
-      <h2 class="font-mono text-[21px] font-medium text-ink-strong">{{ cell().id }}</h2>
-      <p class="mt-1.5 text-[15px]">
+    <ui-sheet [label]="'Microzona ' + cell().id" (closed)="close.emit()">
+      <p class="text-small text-muted">{{ header() }}</p>
+      <h2 class="tnum text-h3 font-medium text-ink-strong">{{ cell().id }}</h2>
+      <p class="mt-1.5 text-body">
         <strong [class]="colorTxt()">{{ colorWord() }} · {{ pct() }}% recup.</strong>
         <span class="text-muted">
           {{
@@ -51,13 +45,13 @@ const MACRO_NAME: Record<string, string> = {
           }}
         </span>
       </p>
-      <p class="text-[14px] text-muted">
+      <p class="text-small text-muted">
         {{ lastText() }} · {{ cell().uses_30d }} usos en 30 días
       </p>
 
       @if (!warn()) {
         <div class="mt-5">
-          <p class="text-[14px] font-medium text-ink">Hora de aplicación</p>
+          <p class="text-small font-medium text-ink">Hora de aplicación</p>
           <div class="mt-2 grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -77,7 +71,7 @@ const MACRO_NAME: Record<string, string> = {
           </div>
         </div>
         @if (error(); as msg) {
-          <p role="alert" class="mt-2.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-2.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
         <button
           uiBtn
@@ -90,7 +84,7 @@ const MACRO_NAME: Record<string, string> = {
         </button>
       } @else {
         <p
-          class="mt-5 flex items-start gap-2.5 rounded-2xl bg-honey-soft px-4 py-3.5 text-[14px] font-medium text-olive"
+          class="mt-5 flex items-start gap-2.5 rounded-2xl bg-honey-soft px-4 py-3.5 text-small font-medium text-olive"
         >
           <svg lucideTriangleAlert [size]="18" class="mt-0.5 shrink-0" aria-hidden="true"></svg>
           <span>
@@ -99,7 +93,7 @@ const MACRO_NAME: Record<string, string> = {
           </span>
         </p>
         @if (error(); as msg) {
-          <p role="alert" class="mt-2.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-2.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
         <div class="mt-5 space-y-2">
           @if (suggestedId(); as suggested) {
@@ -127,7 +121,7 @@ const MACRO_NAME: Record<string, string> = {
           </button>
         </div>
       }
-    </div>
+    </ui-sheet>
   `,
 })
 export class MicrozoneSheet {
@@ -165,7 +159,7 @@ export class MicrozoneSheet {
 
   protected timeBtnCls(mode: 'now' | 'custom'): string {
     const on = this.timeMode() === mode;
-    return `touch-target focus-ring cursor-pointer rounded-2xl border text-[15px] font-medium transition-colors ${
+    return `touch-target focus-ring cursor-pointer rounded-2xl border text-body font-medium transition-colors ${
       on ? 'border-line bg-card text-ink' : 'border-line bg-sand text-muted hover:text-ink'
     }`;
   }

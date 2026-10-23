@@ -17,19 +17,19 @@ import { AuthShell } from './auth-shell';
       subtitle="Con 8+ caracteres y al menos un número."
     >
       @if (!token) {
-        <p role="alert" class="rounded-2xl bg-mz-red-soft px-4 py-3.5 text-[14px] font-medium text-mz-red">
+        <p role="alert" class="rounded-2xl bg-mz-red-soft px-4 py-3.5 text-small font-medium text-mz-red">
           Este enlace no trae token. Pide uno nuevo desde “Olvidé mi contraseña”.
         </p>
       } @else if (done()) {
         <p
           role="status"
-          class="rounded-2xl bg-mz-green-soft px-4 py-3.5 text-[14px] font-medium text-mz-green"
+          class="rounded-2xl bg-mz-green-soft px-4 py-3.5 text-small font-medium text-mz-green"
         >
           Contraseña actualizada. Ya puedes entrar.
         </p>
       } @else {
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-          <label for="reset-password" class="block text-[14px] font-medium text-ink">
+          <label for="reset-password" class="block text-small font-medium text-ink">
             Contraseña nueva
           </label>
           <input
@@ -41,10 +41,10 @@ import { AuthShell } from './auth-shell';
             [class]="input + ' mt-1.5'"
           />
           @if (passwordError(); as msg) {
-            <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+            <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
           }
           @if (serverError(); as msg) {
-            <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+            <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
           }
           <button uiBtn type="submit" [extraClass]="'mt-6 w-full py-3.5'" [disabled]="submitting()">
             {{ submitting() ? 'Guardando…' : 'Guardar contraseña' }}

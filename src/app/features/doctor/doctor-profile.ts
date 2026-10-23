@@ -19,14 +19,14 @@ import { UiBtn } from '../../shared/ui/button';
       profileRoute="/cuenta"
     >
       <main class="page-enter space-y-3">
-        <h1 class="text-[32px] font-normal tracking-[-0.02em] text-ink-strong sm:text-[40px]">
+        <h1 class="text-h1 font-normal text-ink-strong">
           Tu cuenta
         </h1>
         <section class="card flex items-center gap-4 p-5" aria-label="Tu cuenta">
           <ui-avatar [name]="userName()" [size]="56" />
           <div class="min-w-0">
-            <p class="truncate text-[20px] font-medium text-ink-strong">{{ userName() }}</p>
-            <p class="truncate text-[14px] text-muted">{{ user()?.email }} · Médico</p>
+            <p class="truncate text-h3 font-medium text-ink-strong">{{ userName() }}</p>
+            <p class="truncate text-small text-muted">{{ user()?.email }} · Médico</p>
           </div>
         </section>
         <button uiBtn variant="outline" type="button" [extraClass]="'w-full py-3 text-mz-red'" (click)="logout()">

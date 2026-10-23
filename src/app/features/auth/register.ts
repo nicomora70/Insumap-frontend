@@ -19,19 +19,19 @@ import { AuthShell } from './auth-shell';
       subtitle="Tus datos de salud solo los ves tú y los médicos que autorices."
     >
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <label for="reg-name" class="block text-[14px] font-medium text-ink">Nombre</label>
+        <label for="reg-name" class="block text-small font-medium text-ink">Nombre</label>
         <input id="reg-name" autocomplete="name" placeholder="Ana" formControlName="name" [class]="input + ' mt-1.5'" />
         @if (nameError(); as msg) {
-          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
 
-        <label for="reg-email" class="mt-5 block text-[14px] font-medium text-ink">Email</label>
+        <label for="reg-email" class="mt-5 block text-small font-medium text-ink">Email</label>
         <input id="reg-email" type="email" autocomplete="email" placeholder="ana@correo.com" formControlName="email" [class]="input + ' mt-1.5'" />
         @if (emailError(); as msg) {
-          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
 
-        <label for="reg-password" class="mt-5 block text-[14px] font-medium text-ink">Contraseña</label>
+        <label for="reg-password" class="mt-5 block text-small font-medium text-ink">Contraseña</label>
         <input
           id="reg-password"
           type="password"
@@ -41,11 +41,11 @@ import { AuthShell } from './auth-shell';
           [class]="input + ' mt-1.5'"
         />
         @if (passwordError(); as msg) {
-          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
 
         <fieldset class="mt-5">
-          <legend class="text-[14px] font-medium text-ink">Soy</legend>
+          <legend class="text-small font-medium text-ink">Soy</legend>
           <div class="mt-2 grid grid-cols-2 gap-2">
             <label [class]="roleCls('PATIENT')">
               <input type="radio" value="PATIENT" formControlName="role" class="sr-only" />
@@ -61,7 +61,7 @@ import { AuthShell } from './auth-shell';
         </fieldset>
 
         @if (isDoctorForm()) {
-          <label for="reg-license" class="mt-5 block text-[14px] font-medium text-ink">
+          <label for="reg-license" class="mt-5 block text-small font-medium text-ink">
             Registro profesional
           </label>
           <input
@@ -71,19 +71,19 @@ import { AuthShell } from './auth-shell';
             [class]="input + ' mt-1.5'"
           />
           @if (licenseError(); as msg) {
-            <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+            <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
           }
         }
 
-        <label class="mt-5 flex cursor-pointer items-start gap-2.5 text-[14px] text-ink">
+        <label class="mt-5 flex cursor-pointer items-start gap-2.5 text-small text-ink">
           <input type="checkbox" formControlName="accept_terms" class="mt-0.5 h-5 w-5 accent-[#1f1a14]" />
           Acepto el tratamiento de mis datos de salud según lo descrito en la app.
         </label>
         @if (termsError(); as msg) {
-          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
         @if (serverError(); as msg) {
-          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
 
         <button uiBtn type="submit" [extraClass]="'mt-6 w-full py-3.5'" [disabled]="submitting()">
@@ -125,7 +125,7 @@ export class RegisterPage {
 
   protected roleCls(role: 'PATIENT' | 'DOCTOR'): string {
     const selected = this.roleValue() === role;
-    return `touch-target pressable focus-ring flex cursor-pointer items-center justify-center gap-2 rounded-full border text-[15px] font-medium ${
+    return `touch-target pressable focus-ring flex cursor-pointer items-center justify-center gap-2 rounded-full border text-body font-medium ${
       selected
         ? 'border-ink bg-primary text-white'
         : 'border-line bg-card text-ink hover:bg-sand'

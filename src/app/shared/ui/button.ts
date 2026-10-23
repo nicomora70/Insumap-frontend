@@ -4,7 +4,7 @@ export type BtnVariant = 'primary' | 'dark' | 'outline' | 'soft' | 'ghost' | 'da
 
 const BASE =
   'pressable focus-ring touch-target inline-flex cursor-pointer items-center justify-center gap-2 ' +
-  'rounded-full text-[15px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-50';
+  'rounded-full text-body font-medium transition-colors disabled:pointer-events-none disabled:opacity-50';
 
 const VARIANTS: Record<BtnVariant, string> = {
   primary: 'bg-honey text-ink-strong hover:bg-honey-deep',

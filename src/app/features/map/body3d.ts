@@ -18,6 +18,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { CellColor, MapResponse } from '../../core/data/types';
 import { MACROS, macroCells, worstColor } from '../../core/util/body';
 import type { MacroCode } from '../../core/util/body';
+import { SUGGESTED_HEX, SUGGESTED_STRENGTH, ZONE_HEX, ZONE_STRENGTH } from '../../core/util/zone-colors';
 
 /**
  * Modelo anatómico real (CC0, Grab3D) servido desde /models.
@@ -39,11 +40,11 @@ function srgb(hex: string): [number, number, number] {
  * de la zona (0 = modelo intacto, 1 = color plano); el borde se funde a 0.
  */
 const ZONE_WASH: Record<CellColor, { color: [number, number, number]; strength: number }> = {
-  RED: { color: srgb('#ff5a45'), strength: 0.74 },
-  YELLOW: { color: srgb('#2fd8ff'), strength: 0.78 },
-  GREEN: { color: srgb('#3dcc72'), strength: 0.68 },
+  RED: { color: srgb(ZONE_HEX.RED), strength: ZONE_STRENGTH.RED },
+  YELLOW: { color: srgb(ZONE_HEX.YELLOW), strength: ZONE_STRENGTH.YELLOW },
+  GREEN: { color: srgb(ZONE_HEX.GREEN), strength: ZONE_STRENGTH.GREEN },
 };
-const SUGGESTED_WASH = { color: srgb('#2ee872'), strength: 0.78 };
+const SUGGESTED_WASH = { color: srgb(SUGGESTED_HEX), strength: SUGGESTED_STRENGTH };
 
 interface ZonePaint {
   tint: THREE.BufferAttribute;
@@ -120,7 +121,7 @@ const STATUS_SHORT: Record<CellColor, string> = {
 
 const LABEL_CLASS: Record<CellColor, string> = {
   RED: 'text-mz-red',
-  YELLOW: 'text-cyan-700',
+  YELLOW: 'text-mz-yellow',
   GREEN: 'text-mz-green',
 };
 
@@ -138,7 +139,7 @@ const LABEL_CLASS: Record<CellColor, string> = {
     >
       @if (!ready()) {
         <div class="absolute inset-0 flex items-center justify-center">
-          <p class="animate-pulse text-[14px] font-medium text-muted">
+          <p class="animate-pulse text-small font-medium text-muted">
             {{ failed() ? 'No se pudo cargar el modelo 3D.' : 'Cargando modelo anatómico…' }}
           </p>
         </div>
@@ -152,7 +153,7 @@ const LABEL_CLASS: Record<CellColor, string> = {
       @for (macro of macros; track macro) {
         <span
           #lbl
-          class="pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded-full border border-line bg-card px-2.5 py-1 text-[11px] font-medium shadow-[0_4px_12px_rgb(31_26_20/0.08)]"
+          class="pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded-full border border-line bg-card px-2.5 py-1 text-caption font-medium shadow-[0_4px_12px_rgb(31_26_20/0.08)]"
           [class]="labelClass(macro)"
         >
           @if (suggestionMacro() === macro) {
@@ -168,7 +169,7 @@ const LABEL_CLASS: Record<CellColor, string> = {
         </span>
       }
 
-      <p class="pointer-events-none absolute inset-x-0 bottom-1 text-center text-[12px] font-medium text-muted">
+      <p class="pointer-events-none absolute inset-x-0 bottom-1 text-center text-caption font-medium text-muted">
         Arrastra para girar · toca una zona
       </p>
     </div>

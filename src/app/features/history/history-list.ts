@@ -17,29 +17,29 @@ import { UiBtn } from '../../shared/ui/button';
       </div>
     } @else if (store.error(); as msg) {
       <div class="mx-auto flex max-w-md flex-col items-center px-6 pb-32 pt-10 text-center">
-        <p class="text-[17px] font-medium text-ink-strong">No pudimos cargar el historial</p>
-        <p class="mt-2 text-[14px] text-muted">{{ msg }}</p>
+        <p class="text-title font-medium text-ink-strong">No pudimos cargar el historial</p>
+        <p class="mt-2 text-small text-muted">{{ msg }}</p>
         <button uiBtn type="button" [extraClass]="'mt-5 w-full py-3.5'" (click)="retry()">
           Reintentar
         </button>
       </div>
     } @else if (store.items().length === 0) {
       <div class="mx-auto flex max-w-md flex-col items-center px-6 pb-32 pt-10 text-center">
-        <p class="text-[17px] font-medium text-ink-strong">Aún no hay aplicaciones registradas</p>
-        <p class="mt-2 text-[14px] text-muted">{{ emptyHint() }}</p>
+        <p class="text-title font-medium text-ink-strong">Aún no hay aplicaciones registradas</p>
+        <p class="mt-2 text-small text-muted">{{ emptyHint() }}</p>
       </div>
     } @else {
       <ul class="card divide-y divide-line overflow-hidden">
         @for (item of store.items(); track item.id) {
           <li class="flex items-center gap-3.5 px-5 py-4">
             <div
-              class="flex h-10 w-14 shrink-0 items-center justify-center rounded-full bg-sand text-[12px] font-medium text-ink"
+              class="flex h-10 w-14 shrink-0 items-center justify-center rounded-full bg-sand text-caption font-medium text-ink"
             >
               {{ hourText(item) }}
             </div>
             <div class="min-w-0 flex-1">
-              <p class="truncate font-mono text-[14px] font-medium text-ink">{{ item.microzone_id }}</p>
-              <p class="text-[13px] text-muted">{{ dateText(item) }} · {{ item.macro }}</p>
+              <p class="tnum truncate text-small font-medium text-ink">{{ item.microzone_id }}</p>
+              <p class="text-small text-muted">{{ dateText(item) }} · {{ item.macro }}</p>
             </div>
             <span [class]="badgeCls(item)">{{ badgeText(item) }}</span>
           </li>
@@ -87,6 +87,6 @@ export class HistoryList implements OnInit {
   }
 
   protected badgeCls(item: InjectionOut): string {
-    return `shrink-0 rounded-full px-3 py-1 text-[12px] font-medium ${statusBadge(item.status).className}`;
+    return `shrink-0 rounded-full px-3 py-1 text-caption font-medium ${statusBadge(item.status).className}`;
   }
 }

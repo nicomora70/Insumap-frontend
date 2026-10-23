@@ -8,9 +8,12 @@ import type { CellColor, CellOut, MacroSide } from '../../core/data/types';
 import { PATIENT_TABS } from '../../core/nav';
 import { MACROS, MACRO_LABEL, macroCells, parseMacro, parseSide, worstColor } from '../../core/util/body';
 import type { MacroCode } from '../../core/util/body';
+import { SUGGESTED_HEX, ZONE_HEX } from '../../core/util/zone-colors';
 import { describeLocation } from '../../core/util/format';
 import { AppShell } from '../../shared/shell/app-shell';
 import { UiBtn } from '../../shared/ui/button';
+import { UiSegmented } from '../../shared/ui/segmented';
+import type { SegmentOption } from '../../shared/ui/segmented';
 import { TAB_CARD } from '../../shared/ui/classes';
 import { Body3D } from './body3d';
 import { MacroGrid } from './macro-grid';
@@ -26,16 +29,22 @@ const WORD: Record<CellColor, string> = {
 
 const DOT: Record<CellColor, string> = {
   RED: 'bg-mz-red',
-  YELLOW: 'bg-cyan-500',
+  YELLOW: 'bg-mz-yellow',
   GREEN: 'bg-mz-green',
 };
 
-/** Leyenda de los colores del cuerpo 3D (mismos tonos del velo de cada zona). */
-const LEGEND: { label: string; dot: string; star: boolean }[] = [
-  { label: 'Sugerida', dot: 'bg-[#2ee872]', star: true },
-  { label: 'Lista', dot: 'bg-[#3dcc72]', star: false },
-  { label: 'Casi lista', dot: 'bg-[#2fd8ff]', star: false },
-  { label: 'Recuperando', dot: 'bg-[#ff5a45]', star: false },
+interface LegendItem {
+  label: string;
+  hex: string;
+  star: boolean;
+}
+
+/** Leyenda del cuerpo 3D: misma fuente de color que el velo de cada zona. */
+const LEGEND: LegendItem[] = [
+  { label: 'Sugerida', hex: SUGGESTED_HEX, star: true },
+  { label: 'Lista', hex: ZONE_HEX.GREEN, star: false },
+  { label: 'Casi lista', hex: ZONE_HEX.YELLOW, star: false },
+  { label: 'Recuperando', hex: ZONE_HEX.RED, star: false },
 ];
 
 type MapView = 'body' | 'list';
@@ -49,7 +58,7 @@ interface ZoomState {
 /** P04: inicio del paciente con la composición editorial de la referencia. */
 @Component({
   selector: 'app-map-page',
-  imports: [AppShell, UiBtn, Body3D, ZoomGrid, MacroGrid, MicrozoneSheet, LucideChevronRight, LucideStar],
+  imports: [AppShell, UiBtn, UiSegmented, Body3D, ZoomGrid, MacroGrid, MicrozoneSheet, LucideChevronRight, LucideStar],
   template: `
     <app-shell [userName]="userName()" [tabs]="tabs" active="mapa">
       <main class="page-enter">
@@ -61,17 +70,17 @@ interface ZoomState {
           </div>
         } @else if (mapStore.error(); as msg) {
           <div class="mx-auto flex max-w-md flex-col items-center py-20 text-center">
-            <p class="text-[22px] font-normal text-ink-strong">No pudimos cargar tu mapa</p>
-            <p class="mt-2 text-[14px] text-muted">{{ msg }}</p>
+            <p class="text-h3 font-normal text-ink-strong">No pudimos cargar tu mapa</p>
+            <p class="mt-2 text-small text-muted">{{ msg }}</p>
             <button uiBtn type="button" [extraClass]="'mt-6 w-full py-3.5'" (click)="mapStore.refresh()">
               Reintentar
             </button>
           </div>
         } @else if (mapStore.map(); as map) {
           <!-- Titular editorial -->
-          <p class="text-[15px] text-muted">Hola, {{ userName() }}</p>
+          <p class="text-body text-muted">Hola, {{ userName() }}</p>
           <h1
-            class="mt-2 max-w-3xl text-[36px] font-normal leading-[1.08] tracking-[-0.02em] text-ink-strong sm:text-[48px]"
+            class="mt-2 max-w-3xl text-display font-normal text-ink-strong"
           >
             El cuidado que <span class="text-caramel">mereces</span>
           </h1>
@@ -84,13 +93,13 @@ interface ZoomState {
                 (click)="locate(sug.microzone_id)"
                 class="pressable focus-ring group flex min-h-[210px] w-full cursor-pointer flex-col justify-between rounded-3xl bg-gradient-to-br from-cocoa to-cocoa-soft p-6 text-left text-cream sm:min-h-[240px]"
               >
-                <span class="text-[26px] font-normal leading-snug tracking-[-0.01em] sm:text-[30px]">
+                <span class="text-h3 font-normal leading-snug sm:text-h2">
                   Tu próxima dosis
                   <span class="block text-honey">
                     {{ describe(sug.microzone_id) }}
                   </span>
                 </span>
-                <span class="flex items-center justify-between text-[14px] font-medium">
+                <span class="flex items-center justify-between text-small font-medium">
                   Ver en el mapa
                   <svg lucideChevronRight [size]="20" aria-hidden="true"></svg>
                 </span>
@@ -100,13 +109,13 @@ interface ZoomState {
             <button
               type="button"
               (click)="askWhy()"
-              class="pressable focus-ring group flex min-h-[210px] w-full cursor-pointer flex-col justify-between rounded-3xl bg-gradient-to-br from-caramel to-honey p-6 text-left text-cream sm:min-h-[240px]"
+              class="pressable focus-ring group flex min-h-[210px] w-full cursor-pointer flex-col justify-between rounded-3xl bg-gradient-to-br from-caramel to-honey p-6 text-left text-ink-strong sm:min-h-[240px]"
             >
-              <span class="text-[26px] font-normal leading-snug tracking-[-0.01em] sm:text-[30px]">
+              <span class="text-h3 font-normal leading-snug sm:text-h2">
                 ¿Por qué esta zona?
                 <span class="block text-ink-strong/80">Pregúntale al asistente</span>
               </span>
-              <span class="flex items-center justify-between text-[14px] font-medium text-ink-strong">
+              <span class="flex items-center justify-between text-small font-medium text-ink-strong">
                 Preguntar
                 <svg lucideChevronRight [size]="20" aria-hidden="true"></svg>
               </span>
@@ -119,7 +128,7 @@ interface ZoomState {
               <button type="button" (click)="openMacro(macro)" [class]="tabCard">
                 <span class="flex flex-col gap-0.5">
                   <span>{{ macroLabel(macro) }}</span>
-                  <span class="flex items-center gap-1.5 text-[12px] font-normal text-muted">
+                  <span class="flex items-center gap-1.5 text-caption font-normal text-muted">
                     <span class="h-1.5 w-1.5 rounded-full" [class]="dotCls(macro)"></span>
                     {{ macroPct(macro) }}% {{ macroWord(macro) }}
                   </span>
@@ -131,7 +140,7 @@ interface ZoomState {
 
           <!-- Mapa -->
           <section class="mt-12">
-            <h2 class="text-[28px] font-normal tracking-[-0.02em] text-ink-strong sm:text-[34px]">
+            <h2 class="text-h2 font-normal text-ink-strong">
               Tu mapa de hoy
             </h2>
 
@@ -147,27 +156,13 @@ interface ZoomState {
                 />
               </div>
             } @else {
-              <div
-                class="mt-4 grid w-64 grid-cols-2 gap-1 rounded-full border border-line bg-sand p-1"
-                role="group"
-                aria-label="Modo de mapa"
-              >
-                <button
-                  type="button"
-                  [attr.aria-pressed]="view() === 'body'"
-                  (click)="view.set('body')"
-                  [class]="segCls('body')"
-                >
-                  Cuerpo 3D
-                </button>
-                <button
-                  type="button"
-                  [attr.aria-pressed]="view() === 'list'"
-                  (click)="view.set('list')"
-                  [class]="segCls('list')"
-                >
-                  Lista
-                </button>
+              <div class="mt-4 w-64">
+                <ui-segmented
+                  [options]="views"
+                  [value]="view()"
+                  label="Modo de mapa"
+                  (changed)="setView($event)"
+                />
               </div>
 
               @if (view() === 'body') {
@@ -184,7 +179,7 @@ interface ZoomState {
                 >
                   @for (item of legend; track item.label) {
                     <span
-                      class="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-2.5 py-1 text-[12px] font-medium text-muted"
+                      class="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-2.5 py-1 text-caption font-medium text-muted"
                     >
                       @if (item.star) {
                         <svg
@@ -195,7 +190,7 @@ interface ZoomState {
                           class="text-olive"
                         ></svg>
                       } @else {
-                        <span class="h-2 w-2 rounded-full" [class]="item.dot"></span>
+                        <span class="h-2 w-2 rounded-full" [style.background-color]="item.hex"></span>
                       }
                       {{ item.label }}
                     </span>
@@ -215,7 +210,7 @@ interface ZoomState {
             }
           </section>
 
-          <p class="mt-12 text-[12px] text-muted">
+          <p class="mt-12 text-caption text-muted">
             Proyecto académico de apoyo a la rotación. No es un dispositivo médico.
           </p>
         }
@@ -255,6 +250,10 @@ export class MapPage {
   });
 
   protected readonly view = signal<MapView>('body');
+  protected readonly views: SegmentOption[] = [
+    { id: 'body', label: 'Cuerpo 3D' },
+    { id: 'list', label: 'Lista' },
+  ];
   protected readonly zoom = signal<ZoomState | null>(null);
   protected readonly sheetCell = signal<CellOut | null>(null);
 
@@ -291,11 +290,8 @@ export class MapPage {
     return DOT[worstColor(macroCells(map, macro))];
   }
 
-  protected segCls(mode: MapView): string {
-    const on = this.view() === mode;
-    return `touch-target focus-ring cursor-pointer rounded-full px-4 py-2 text-[14px] font-medium transition-colors ${
-      on ? 'border border-line bg-card text-ink' : 'text-muted hover:text-ink'
-    }`;
+  protected setView(id: string): void {
+    this.view.set(id === 'list' ? 'list' : 'body');
   }
 
   protected askWhy(): void {

@@ -5,11 +5,13 @@ import { MACRO_LABEL, macroSideCells } from '../../core/util/body';
 import type { MacroCode } from '../../core/util/body';
 import { CELL_STYLE, COLOR_LABEL } from '../../core/util/format';
 import { UiBtn } from '../../shared/ui/button';
+import { UiSegmented } from '../../shared/ui/segmented';
+import type { SegmentOption } from '../../shared/ui/segmented';
 
 /** Zoom a la cuadrícula de una macrozona con selector de lado (izq./der.). */
 @Component({
   selector: 'app-zoom-grid',
-  imports: [UiBtn, LucideArrowLeft, LucideX, LucideTriangleAlert, LucideCheck],
+  imports: [UiBtn, UiSegmented, LucideArrowLeft, LucideX, LucideTriangleAlert, LucideCheck],
   template: `
     <div class="px-5 pb-5 pt-2">
       <div class="flex items-center gap-3">
@@ -24,17 +26,14 @@ import { UiBtn } from '../../shared/ui/button';
         >
           <svg lucideArrowLeft [size]="20" aria-hidden="true"></svg>
         </button>
-        <h2 class="text-[20px] text-ink-strong">{{ macroLabel() }}</h2>
-        <div
-          class="ml-auto grid grid-cols-2 gap-1 rounded-full border border-line bg-sand p-1"
-          role="group"
-          aria-label="Lado"
-        >
-          @for (s of sides; track s) {
-            <button type="button" [attr.aria-pressed]="currentSide() === s" (click)="side.set(s)" [class]="sideCls(s)">
-              {{ s === 'I' ? 'Izq.' : 'Der.' }}
-            </button>
-          }
+        <h2 class="text-h3 text-ink-strong">{{ macroLabel() }}</h2>
+        <div class="ml-auto w-40">
+          <ui-segmented
+            [options]="sideOptions"
+            [value]="currentSide()"
+            label="Lado"
+            (changed)="setSide($event)"
+          />
         </div>
       </div>
 
@@ -66,7 +65,7 @@ import { UiBtn } from '../../shared/ui/button';
           </button>
         }
       </div>
-      <p class="mt-3 text-[12px] text-muted">
+      <p class="mt-3 text-caption text-muted">
         Con 6×6 la cuadrícula se compacta para mantener objetivos ≥44px.
       </p>
     </div>
@@ -81,7 +80,10 @@ export class ZoomGrid {
   readonly back = output<void>();
   readonly select = output<CellOut>();
 
-  protected readonly sides: MacroSide[] = ['I', 'D'];
+  protected readonly sideOptions: SegmentOption[] = [
+    { id: 'I', label: 'Izq.' },
+    { id: 'D', label: 'Der.' },
+  ];
   protected readonly side = signal<MacroSide | null>(null);
 
   protected readonly currentSide = computed<MacroSide>(() => this.side() ?? this.initialSide());
@@ -92,11 +94,8 @@ export class ZoomGrid {
   });
   protected readonly cells = computed(() => macroSideCells(this.map(), this.macro(), this.currentSide()));
 
-  protected sideCls(s: MacroSide): string {
-    const on = this.currentSide() === s;
-    return `touch-target focus-ring cursor-pointer rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
-      on ? 'border border-line bg-card text-ink' : 'text-muted hover:text-ink'
-    }`;
+  protected setSide(id: string): void {
+    this.side.set(id === 'D' ? 'D' : 'I');
   }
 
   protected cellCls(cell: CellOut): string {

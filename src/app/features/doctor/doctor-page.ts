@@ -12,6 +12,8 @@ import { AppShell } from '../../shared/shell/app-shell';
 import { UiAvatar } from '../../shared/ui/avatar';
 import { UiBtn } from '../../shared/ui/button';
 import { INPUT_SM } from '../../shared/ui/classes';
+import { UiSegmented } from '../../shared/ui/segmented';
+import type { SegmentOption } from '../../shared/ui/segmented';
 import { ExportCard } from '../../shared/ui/export-card';
 import { UiPill } from '../../shared/ui/status-pill';
 import { HistoryList } from '../history/history-list';
@@ -37,6 +39,7 @@ interface ZoomState {
     AppShell,
     UiAvatar,
     UiBtn,
+    UiSegmented,
     UiPill,
     ExportCard,
     HistoryList,
@@ -70,9 +73,9 @@ interface ZoomState {
               >
                 <svg lucideArrowLeft [size]="20" aria-hidden="true"></svg>
               </button>
-              <h2 class="text-[20px] text-ink-strong">{{ sel.name }}</h2>
+              <h2 class="text-h3 text-ink-strong">{{ sel.name }}</h2>
               <span
-                class="inline-flex items-center gap-1.5 rounded-full bg-sand px-3 py-1 text-[12px] font-medium text-muted"
+                class="inline-flex items-center gap-1.5 rounded-full bg-sand px-3 py-1 text-caption font-medium text-muted"
               >
                 <svg lucideEye [size]="13" aria-hidden="true"></svg>
                 Solo lectura
@@ -80,27 +83,13 @@ interface ZoomState {
             </div>
 
             <!-- Toggle en móvil; en lg se ven dos columnas -->
-            <div
-              class="mt-3 grid w-64 grid-cols-2 gap-1 rounded-full border border-line bg-sand p-1 lg:hidden"
-              role="group"
-              aria-label="Vista del paciente"
-            >
-              <button
-                type="button"
-                [attr.aria-pressed]="view() === 'mapa'"
-                (click)="view.set('mapa')"
-                [class]="segCls('mapa')"
-              >
-                Mapa
-              </button>
-              <button
-                type="button"
-                [attr.aria-pressed]="view() === 'historial'"
-                (click)="view.set('historial')"
-                [class]="segCls('historial')"
-              >
-                Historial
-              </button>
+            <div class="mt-3 w-64 lg:hidden">
+              <ui-segmented
+                [options]="views"
+                [value]="view()"
+                label="Vista del paciente"
+                (changed)="setView($event)"
+              />
             </div>
 
             <div class="mt-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
@@ -110,7 +99,7 @@ interface ZoomState {
                   <div class="h-96 animate-pulse rounded-3xl bg-sand" aria-label="Cargando mapa"></div>
                 } @else if (patientMap().error; as msg) {
                   <div class="card p-5">
-                    <p class="text-center text-[14px] font-medium text-mz-red">{{ msg }}</p>
+                    <p class="text-center text-small font-medium text-mz-red">{{ msg }}</p>
                     <button
                       uiBtn
                       variant="outline"
@@ -145,20 +134,20 @@ interface ZoomState {
                   @if (cell(); as c) {
                     <section class="card p-5">
                       <div class="flex items-center justify-between gap-2">
-                        <p class="font-mono text-[15px] font-medium text-ink">{{ c.id }}</p>
+                        <p class="tnum text-body font-medium text-ink">{{ c.id }}</p>
                         <div class="flex items-center gap-2">
                           <ui-pill [color]="c.color" />
                           <button
                             type="button"
                             (click)="cell.set(null)"
                             aria-label="Cerrar detalle"
-                            class="pressable focus-ring cursor-pointer rounded-full px-3 py-2 text-[13px] font-medium text-ink underline underline-offset-4"
+                            class="pressable focus-ring cursor-pointer rounded-full px-3 py-2 text-small font-medium text-ink underline underline-offset-4"
                           >
                             Cerrar
                           </button>
                         </div>
                       </div>
-                      <p class="mt-1.5 text-[13px] text-muted">{{ c.uses_30d }} usos en 30 días</p>
+                      <p class="mt-1.5 text-small text-muted">{{ c.uses_30d }} usos en 30 días</p>
                     </section>
                   }
                 }
@@ -180,11 +169,11 @@ interface ZoomState {
         } @else {
           <!-- P10: lista de pacientes -->
           <div class="space-y-3">
-            <h1 class="text-[32px] font-normal tracking-[-0.02em] text-ink-strong sm:text-[40px]">
+            <h1 class="text-h1 font-normal text-ink-strong">
               Tus pacientes
             </h1>
             <section class="card p-5" aria-label="Agregar paciente">
-              <h2 class="flex items-center gap-2 text-[17px] text-ink-strong">
+              <h2 class="flex items-center gap-2 text-title text-ink-strong">
                 <svg lucideLink2 [size]="17" aria-hidden="true"></svg>
                 Agregar paciente
               </h2>
@@ -208,7 +197,7 @@ interface ZoomState {
                 </button>
               </div>
               @if (codeError(); as msg) {
-                <p role="alert" class="mt-2.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+                <p role="alert" class="mt-2.5 text-small font-medium text-mz-red">{{ msg }}</p>
               }
             </section>
 
@@ -216,7 +205,7 @@ interface ZoomState {
               <div class="h-20 animate-pulse rounded-3xl bg-sand" aria-label="Cargando pacientes"></div>
             } @else if (!links.loading() && links.links().length === 0) {
               <div class="card p-5">
-                <p class="text-center text-[14px] text-muted">
+                <p class="text-center text-small text-muted">
                   Sin pacientes vinculados. Pide a tu paciente su código de 8 caracteres.
                 </p>
               </div>
@@ -231,7 +220,7 @@ interface ZoomState {
                       class="pressable focus-ring flex w-full cursor-pointer items-center gap-3.5 px-5 py-4 text-left hover:bg-sand"
                     >
                       <ui-avatar [name]="link.patient_name" [size]="44" />
-                      <span class="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">
+                      <span class="min-w-0 flex-1 truncate text-body font-medium text-ink">
                         {{ link.patient_name }}
                       </span>
                       <svg lucideChevronRight [size]="19" class="text-muted" aria-hidden="true"></svg>
@@ -257,6 +246,10 @@ export class DoctorPage {
 
   protected readonly detail = signal<{ id: string; name: string } | null>(null);
   protected readonly view = signal<'mapa' | 'historial'>('mapa');
+  protected readonly views: SegmentOption[] = [
+    { id: 'mapa', label: 'Mapa' },
+    { id: 'historial', label: 'Historial' },
+  ];
   protected readonly patientMap = signal<PatientMapState>({ loading: false, error: null, map: null });
   protected readonly zoom = signal<ZoomState | null>(null);
   protected readonly cell = signal<CellOut | null>(null);
@@ -302,11 +295,8 @@ export class DoctorPage {
     this.zoom.set({ macro, side: 'I', highlight: null });
   }
 
-  protected segCls(mode: 'mapa' | 'historial'): string {
-    const on = this.view() === mode;
-    return `touch-target focus-ring cursor-pointer rounded-full px-4 py-2 text-[14px] font-medium transition-colors ${
-      on ? 'border border-line bg-card text-ink' : 'text-muted hover:text-ink'
-    }`;
+  protected setView(id: string): void {
+    this.view.set(id === 'historial' ? 'historial' : 'mapa');
   }
 
   private loadPatientMap(patientId: string): void {

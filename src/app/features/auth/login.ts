@@ -17,7 +17,7 @@ import { AuthShell } from './auth-shell';
       subtitle="Accede para ver tu mapa y registrar tus dosis."
     >
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <label for="login-email" class="block text-[14px] font-medium text-ink">Email</label>
+        <label for="login-email" class="block text-small font-medium text-ink">Email</label>
         <input
           id="login-email"
           type="email"
@@ -27,10 +27,10 @@ import { AuthShell } from './auth-shell';
           [class]="input + ' mt-1.5'"
         />
         @if (emailError(); as msg) {
-          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
 
-        <label for="login-password" class="mt-5 block text-[14px] font-medium text-ink">
+        <label for="login-password" class="mt-5 block text-small font-medium text-ink">
           Contraseña
         </label>
         <input
@@ -42,16 +42,16 @@ import { AuthShell } from './auth-shell';
           [class]="input + ' mt-1.5'"
         />
         @if (passwordError(); as msg) {
-          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
         @if (serverError(); as msg) {
-          <p role="alert" class="mt-1.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+          <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
 
         <button uiBtn type="submit" [extraClass]="'mt-6 w-full py-3.5'" [disabled]="submitting()">
           {{ submitting() ? 'Un momento…' : 'Entrar' }}
         </button>
-        <p class="mt-4 text-center text-[14px]">
+        <p class="mt-4 text-center text-small">
           <a
             routerLink="/forgot-password"
             class="font-medium text-ink underline underline-offset-4"

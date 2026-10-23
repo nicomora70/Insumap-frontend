@@ -12,11 +12,13 @@ import { PATIENT_TABS } from '../../core/nav';
 import { AppShell } from '../../shared/shell/app-shell';
 import { UiAvatar } from '../../shared/ui/avatar';
 import { UiBtn } from '../../shared/ui/button';
+import { UiSegmented } from '../../shared/ui/segmented';
+import type { SegmentOption } from '../../shared/ui/segmented';
 
 /** P09: perfil, tamaño de cuadrícula, vínculos con el médico y sesión (HU-02/24/22). */
 @Component({
   selector: 'app-profile-page',
-  imports: [AppShell, UiAvatar, UiBtn, LucideKeyRound, LucideCopy, LucideCheck, LucideLogOut],
+  imports: [AppShell, UiAvatar, UiBtn, UiSegmented, LucideKeyRound, LucideCopy, LucideCheck, LucideLogOut],
   template: `
     <app-shell
       [userName]="userName()"
@@ -25,51 +27,47 @@ import { UiBtn } from '../../shared/ui/button';
       profileRoute="/perfil"
     >
       <main class="page-enter space-y-3">
-        <h1 class="text-[32px] font-normal tracking-[-0.02em] text-ink-strong sm:text-[40px]">
+        <h1 class="text-h1 font-normal text-ink-strong">
           Tu cuenta
         </h1>
         <section class="card flex items-center gap-4 p-5" aria-label="Tu cuenta">
           <ui-avatar [name]="userName()" [size]="56" />
           <div class="min-w-0">
-            <p class="truncate text-[20px] font-medium text-ink-strong">{{ userName() }}</p>
-            <p class="truncate text-[14px] text-muted">
+            <p class="truncate text-h3 font-medium text-ink-strong">{{ userName() }}</p>
+            <p class="truncate text-small text-muted">
               {{ user()?.email }} · {{ user()?.role === 'DOCTOR' ? 'Médico' : 'Paciente' }}
             </p>
           </div>
         </section>
 
         <section class="card p-5" aria-label="Tamaño de la cuadrícula">
-          <h2 class="text-[17px] text-ink-strong">Cuadrícula por lado</h2>
-          <p class="mt-1 text-[13px] text-muted">
+          <h2 class="text-title text-ink-strong">Cuadrícula por lado</h2>
+          <p class="mt-1 text-small text-muted">
             Cambiarla reproyecta tu historial a la nueva cuadrícula.
           </p>
-          <div class="mt-4 grid grid-cols-3 gap-2" role="group" aria-label="Tamaño de cuadrícula">
-            @for (n of gridSizes; track n) {
-              <button
-                type="button"
-                [attr.aria-pressed]="gridSize() === n"
-                [disabled]="mapStore.gridPending()"
-                (click)="setGrid(n)"
-                [class]="gridCls(n)"
-              >
-                {{ n }}×{{ n }}
-              </button>
-            }
+          <div class="mt-4">
+            <ui-segmented
+              [options]="gridOptions"
+              [value]="gridValue()"
+              label="Tamaño de cuadrícula"
+              [disabled]="mapStore.gridPending()"
+              (changed)="setGridOption($event)"
+            />
           </div>
           @if (gridError(); as msg) {
-            <p role="alert" class="mt-2.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+            <p role="alert" class="mt-2.5 text-small font-medium text-mz-red">{{ msg }}</p>
           }
         </section>
 
         <section class="card p-5" aria-label="Compartir con mi médico">
-          <h2 class="flex items-center gap-2 text-[17px] text-ink-strong">
+          <h2 class="flex items-center gap-2 text-title text-ink-strong">
             <svg lucideKeyRound [size]="17" aria-hidden="true"></svg>
             Compartir con mi médico
           </h2>
-          <p class="mt-1 text-[13px] text-muted">Genera un código de un solo uso, válido 48 h.</p>
+          <p class="mt-1 text-small text-muted">Genera un código de un solo uso, válido 48 h.</p>
           @if (code(); as c) {
             <div class="mt-3 flex items-center gap-2 rounded-2xl bg-sand px-5 py-3.5">
-              <p class="flex-1 text-center font-mono text-[20px] font-medium tracking-[0.2em] text-ink-strong">
+              <p class="flex-1 text-center font-mono text-h3 font-medium tracking-[0.2em] text-ink-strong">
                 {{ c.code }}
               </p>
               <button
@@ -97,18 +95,18 @@ import { UiBtn } from '../../shared/ui/button';
             </button>
           }
           @if (codeError(); as msg) {
-            <p role="alert" class="mt-2.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+            <p role="alert" class="mt-2.5 text-small font-medium text-mz-red">{{ msg }}</p>
           }
           @if (doctors().length > 0) {
             <ul class="mt-4 divide-y divide-line border-t border-line">
               @for (link of doctors(); track link.id) {
                 <li class="flex items-center justify-between gap-2 py-3">
-                  <span class="text-[14px] font-medium text-ink">{{ link.doctor_name }}</span>
+                  <span class="text-small font-medium text-ink">{{ link.doctor_name }}</span>
                   <button
                     type="button"
                     [disabled]="links.revoking()"
                     (click)="revoke(link.id)"
-                    class="pressable focus-ring shrink-0 cursor-pointer rounded-full px-3 py-2 text-[13px] font-medium text-mz-red disabled:opacity-50"
+                    class="pressable focus-ring shrink-0 cursor-pointer rounded-full px-3 py-2 text-small font-medium text-mz-red disabled:opacity-50"
                   >
                     Revocar
                   </button>
@@ -134,7 +132,12 @@ export class ProfilePage {
   protected readonly mapStore = inject(MapStore);
 
   protected readonly tabs = PATIENT_TABS;
-  protected readonly gridSizes: GridSize[] = [2, 4, 6];
+  protected readonly gridOptions: SegmentOption[] = [
+    { id: '2', label: '2×2' },
+    { id: '4', label: '4×4' },
+    { id: '6', label: '6×6' },
+  ];
+  protected readonly gridValue = computed(() => String(this.gridSize()));
 
   protected readonly user = this.auth.user;
   protected readonly userName = computed(() => this.auth.user()?.name ?? 'Insumap');
@@ -150,11 +153,9 @@ export class ProfilePage {
     this.links.load();
   }
 
-  protected gridCls(n: GridSize): string {
-    const on = this.gridSize() === n;
-    return `touch-target pressable focus-ring cursor-pointer rounded-full border text-[15px] font-medium transition-colors disabled:opacity-50 ${
-      on ? 'border-ink bg-primary text-white' : 'border-line bg-card text-ink hover:bg-sand'
-    }`;
+  protected setGridOption(id: string): void {
+    const n = Number(id);
+    if (n === 2 || n === 4 || n === 6) this.setGrid(n as GridSize);
   }
 
   protected setGrid(n: GridSize): void {

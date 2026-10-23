@@ -30,7 +30,7 @@ type PushUi = 'idle' | 'working' | PushState;
   template: `
     <li class="card p-5">
       <div class="flex items-center justify-between gap-2">
-        <p class="text-[17px] font-medium text-ink-strong">{{ dueText() }}</p>
+        <p class="text-title font-medium text-ink-strong">{{ dueText() }}</p>
         <span [class]="pillCls()">
           <svg lucideClock [size]="13" [strokeWidth]="2.2" aria-hidden="true"></svg>
           {{ pending() ? 'Pendiente' : 'Programada' }}
@@ -63,7 +63,7 @@ type PushUi = 'idle' | 'working' | PushState;
             type="button"
             [disabled]="reminders.confirmingId() === reminder().id"
             (click)="confirm()"
-            class="pressable focus-ring touch-target inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-mz-green-soft px-2 text-[13px] font-medium text-mz-green disabled:opacity-50"
+            class="pressable focus-ring touch-target inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-mz-green-soft px-2 text-small font-medium text-mz-green disabled:opacity-50"
           >
             <svg lucideCheck [size]="15" [strokeWidth]="2.5" aria-hidden="true"></svg>
             {{ reminders.confirmingId() === reminder().id ? '…' : 'La apliqué' }}
@@ -72,7 +72,7 @@ type PushUi = 'idle' | 'working' | PushState;
       }
 
       @if (error(); as msg) {
-        <p role="alert" class="mt-2.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+        <p role="alert" class="mt-2.5 text-small font-medium text-mz-red">{{ msg }}</p>
       }
     </li>
   `,
@@ -95,13 +95,13 @@ export class ReminderCard {
   protected readonly dueText = computed(() => formatDue(this.reminder().due_at));
 
   protected pillCls(): string {
-    return `inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium ${
+    return `inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-caption font-medium ${
       this.pending() ? 'bg-honey-soft text-olive' : 'bg-sand text-muted'
     }`;
   }
 
   protected snoozeCls(): string {
-    return 'pressable focus-ring touch-target cursor-pointer rounded-full bg-sand text-[13px] font-medium text-ink hover:bg-sand-deep disabled:opacity-50';
+    return 'pressable focus-ring touch-target cursor-pointer rounded-full bg-sand text-small font-medium text-ink hover:bg-sand-deep disabled:opacity-50';
   }
 
   protected snooze(minutes: number): void {
@@ -150,16 +150,16 @@ export class ReminderCard {
   template: `
     <app-shell [userName]="userName()" [tabs]="tabs" active="dosis">
       <main class="page-enter space-y-4 pb-10">
-        <h1 class="text-[32px] font-normal tracking-[-0.02em] text-ink-strong sm:text-[40px]">
+        <h1 class="text-h1 font-normal text-ink-strong">
           Tus dosis
         </h1>
         <!-- Cronograma -->
         <section class="card p-5" aria-label="Cronograma de dosis">
-          <h2 class="flex items-center gap-2 text-[17px] text-ink-strong">
+          <h2 class="flex items-center gap-2 text-title text-ink-strong">
             <svg lucideClock [size]="18" aria-hidden="true"></svg>
             Horarios de mis dosis
           </h2>
-          <p class="mt-1 text-[13px] text-muted">De 1 a 6 dosis al día, según tu tratamiento.</p>
+          <p class="mt-1 text-small text-muted">De 1 a 6 dosis al día, según tu tratamiento.</p>
 
           @if (reminders.loading() && !reminders.schedule()) {
             <div
@@ -220,7 +220,7 @@ export class ReminderCard {
               </button>
             }
             @if (saveError(); as msg) {
-              <p role="alert" class="mt-2.5 text-[13px] font-medium text-mz-red">{{ msg }}</p>
+              <p role="alert" class="mt-2.5 text-small font-medium text-mz-red">{{ msg }}</p>
             }
             <button
               uiBtn
@@ -236,7 +236,7 @@ export class ReminderCard {
 
         <!-- Próximas dosis -->
         <section aria-label="Próximas dosis" class="space-y-2">
-          <h2 class="px-1 text-[17px] text-ink-strong">Próximas dosis</h2>
+          <h2 class="px-1 text-title text-ink-strong">Próximas dosis</h2>
           @if (reminders.loading() && reminders.upcoming().length === 0) {
             <div
               class="h-24 animate-pulse rounded-3xl bg-sand"
@@ -256,7 +256,7 @@ export class ReminderCard {
             </div>
           } @else if (reminders.upcoming().length === 0) {
             <div class="card p-5">
-              <p class="text-[14px] text-muted">
+              <p class="text-small text-muted">
                 Sin dosis próximas. Guarda tus horarios arriba y aparecerán aquí.
               </p>
             </div>
@@ -296,7 +296,7 @@ export class ReminderCard {
             {{ pushText() }}
           </button>
         </section>
-        <p class="px-1 text-[12px] text-muted">
+        <p class="px-1 text-caption text-muted">
           En iPhone el push solo llega con la app instalada (iOS 16.4+). Esta lista es el respaldo
           dentro de la app.
         </p>

@@ -13,15 +13,15 @@ import { Component, input } from '@angular/core';
       <div class="relative mx-auto flex min-h-svh w-full max-w-md flex-col justify-center px-6 py-12">
         <p class="text-[22px] font-bold lowercase tracking-tight text-ink-strong">insumap</p>
 
-        <h1 class="mt-7 text-[32px] font-normal leading-[1.15] tracking-[-0.02em] text-ink-strong">
+        <h1 class="mt-7 text-h1 font-normal text-ink-strong">
           {{ title() }}
         </h1>
-        <p class="mt-2 text-[15px] leading-relaxed text-muted">{{ subtitle() }}</p>
+        <p class="mt-2 text-body leading-relaxed text-muted">{{ subtitle() }}</p>
 
         <div class="card mt-6 p-6">
           <ng-content />
         </div>
-        <div class="mt-5 text-center text-[14px] text-muted">
+        <div class="mt-5 text-center text-small text-muted">
           <ng-content select="[footer]" />
         </div>
       </div>
