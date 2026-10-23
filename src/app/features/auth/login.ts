@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { LucideEye, LucideEyeOff } from '@lucide/angular';
 import { toApiError } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
 import { UiBtn } from '../../shared/ui/button';
@@ -10,11 +11,11 @@ import { AuthShell } from './auth-shell';
 /** P01: iniciar sesión (HU-20). */
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, UiBtn, AuthShell],
+  imports: [ReactiveFormsModule, RouterLink, UiBtn, AuthShell, LucideEye, LucideEyeOff],
   template: `
     <app-auth-shell
       title="Bienvenido de nuevo"
-      subtitle="Accede para ver tu mapa y registrar tus dosis."
+      subtitle="Entra para ver tu mapa y registrar tus dosis."
     >
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <label for="login-email" class="block text-small font-medium text-ink">Email</label>
@@ -33,14 +34,29 @@ import { AuthShell } from './auth-shell';
         <label for="login-password" class="mt-5 block text-small font-medium text-ink">
           Contraseña
         </label>
-        <input
-          id="login-password"
-          type="password"
-          autocomplete="current-password"
-          placeholder="••••••••"
-          formControlName="password"
-          [class]="input + ' mt-1.5'"
-        />
+        <div class="relative mt-1.5">
+          <input
+            id="login-password"
+            [type]="showPassword() ? 'text' : 'password'"
+            autocomplete="current-password"
+            placeholder="••••••••"
+            formControlName="password"
+            [class]="input + ' pr-12'"
+          />
+          <button
+            type="button"
+            (click)="showPassword.set(!showPassword())"
+            [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            [attr.aria-pressed]="showPassword()"
+            class="pressable focus-ring absolute right-1 top-1/2 grid h-11 w-11 -translate-y-1/2 cursor-pointer place-items-center rounded-full text-muted transition-colors hover:bg-sand hover:text-ink"
+          >
+            @if (showPassword()) {
+              <svg lucideEyeOff [size]="18" [strokeWidth]="2" aria-hidden="true"></svg>
+            } @else {
+              <svg lucideEye [size]="18" [strokeWidth]="2" aria-hidden="true"></svg>
+            }
+          </button>
+        </div>
         @if (passwordError(); as msg) {
           <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
@@ -48,13 +64,13 @@ import { AuthShell } from './auth-shell';
           <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
 
-        <button uiBtn type="submit" [extraClass]="'mt-6 w-full py-3.5'" [disabled]="submitting()">
+        <button uiBtn type="submit" [extraClass]="'mt-6 w-full'" [disabled]="submitting()">
           {{ submitting() ? 'Un momento…' : 'Entrar' }}
         </button>
         <p class="mt-4 text-center text-small">
           <a
             routerLink="/forgot-password"
-            class="font-medium text-ink underline underline-offset-4"
+            class="font-medium text-ink underline decoration-ember decoration-2 underline-offset-4 hover:text-ember-ink"
           >
             ¿Olvidaste tu contraseña?
           </a>
@@ -63,7 +79,10 @@ import { AuthShell } from './auth-shell';
 
       <div footer>
         ¿Aún no tienes cuenta?
-        <a routerLink="/register" class="font-medium text-ink underline underline-offset-4">
+        <a
+          routerLink="/register"
+          class="font-medium text-ink underline decoration-ember decoration-2 underline-offset-4 hover:text-ember-ink"
+        >
           Crea una
         </a>
       </div>
@@ -79,6 +98,7 @@ export class LoginPage {
   protected readonly submitting = signal(false);
   protected readonly serverError = signal<string | null>(null);
   protected readonly submitted = signal(false);
+  protected readonly showPassword = signal(false);
 
   protected readonly form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],

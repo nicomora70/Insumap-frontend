@@ -1,7 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { LucideHeartPulse, LucideStethoscope } from '@lucide/angular';
+import {
+  LucideCheck,
+  LucideEye,
+  LucideEyeOff,
+  LucideHeartPulse,
+  LucideStethoscope,
+} from '@lucide/angular';
 import { toApiError } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
 import type { RegisterRequest } from '../../core/data/types';
@@ -12,7 +18,17 @@ import { AuthShell } from './auth-shell';
 /** P02: crear cuenta de paciente o médico (HU-21). */
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, RouterLink, UiBtn, AuthShell, LucideHeartPulse, LucideStethoscope],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    UiBtn,
+    AuthShell,
+    LucideHeartPulse,
+    LucideStethoscope,
+    LucideEye,
+    LucideEyeOff,
+    LucideCheck,
+  ],
   template: `
     <app-auth-shell
       title="Crea tu cuenta"
@@ -20,28 +36,58 @@ import { AuthShell } from './auth-shell';
     >
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <label for="reg-name" class="block text-small font-medium text-ink">Nombre</label>
-        <input id="reg-name" autocomplete="name" placeholder="Ana" formControlName="name" [class]="input + ' mt-1.5'" />
+        <input
+          id="reg-name"
+          autocomplete="name"
+          placeholder="Ana"
+          formControlName="name"
+          [class]="input + ' mt-1.5'"
+        />
         @if (nameError(); as msg) {
           <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
 
         <label for="reg-email" class="mt-5 block text-small font-medium text-ink">Email</label>
-        <input id="reg-email" type="email" autocomplete="email" placeholder="ana@correo.com" formControlName="email" [class]="input + ' mt-1.5'" />
+        <input
+          id="reg-email"
+          type="email"
+          autocomplete="email"
+          placeholder="ana@correo.com"
+          formControlName="email"
+          [class]="input + ' mt-1.5'"
+        />
         @if (emailError(); as msg) {
           <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
 
         <label for="reg-password" class="mt-5 block text-small font-medium text-ink">Contraseña</label>
-        <input
-          id="reg-password"
-          type="password"
-          autocomplete="new-password"
-          placeholder="8+ caracteres y un número"
-          formControlName="password"
-          [class]="input + ' mt-1.5'"
-        />
+        <div class="relative mt-1.5">
+          <input
+            id="reg-password"
+            [type]="showPassword() ? 'text' : 'password'"
+            autocomplete="new-password"
+            placeholder="8+ caracteres y un número"
+            formControlName="password"
+            [class]="input + ' pr-12'"
+          />
+          <button
+            type="button"
+            (click)="showPassword.set(!showPassword())"
+            [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            [attr.aria-pressed]="showPassword()"
+            class="pressable focus-ring absolute right-1 top-1/2 grid h-11 w-11 -translate-y-1/2 cursor-pointer place-items-center rounded-full text-muted transition-colors hover:bg-sand hover:text-ink"
+          >
+            @if (showPassword()) {
+              <svg lucideEyeOff [size]="18" [strokeWidth]="2" aria-hidden="true"></svg>
+            } @else {
+              <svg lucideEye [size]="18" [strokeWidth]="2" aria-hidden="true"></svg>
+            }
+          </button>
+        </div>
         @if (passwordError(); as msg) {
           <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
+        } @else {
+          <p class="mt-1.5 text-caption text-muted">Mínimo 8 caracteres y al menos un número.</p>
         }
 
         <fieldset class="mt-5">
@@ -75,9 +121,15 @@ import { AuthShell } from './auth-shell';
           }
         }
 
-        <label class="mt-5 flex cursor-pointer items-start gap-2.5 text-small text-ink">
-          <input type="checkbox" formControlName="accept_terms" class="mt-0.5 h-5 w-5 accent-[#1f1a14]" />
-          Acepto el tratamiento de mis datos de salud según lo descrito en la app.
+        <label class="mt-5 flex cursor-pointer items-start gap-3 text-small leading-relaxed text-ink">
+          <input type="checkbox" formControlName="accept_terms" class="peer sr-only" />
+          <span
+            class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border border-line bg-card text-transparent transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:text-cream peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2"
+            aria-hidden="true"
+          >
+            <svg lucideCheck [size]="13" [strokeWidth]="2.6" aria-hidden="true"></svg>
+          </span>
+          <span>Acepto el tratamiento de mis datos de salud según lo descrito en la app.</span>
         </label>
         @if (termsError(); as msg) {
           <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
@@ -86,14 +138,19 @@ import { AuthShell } from './auth-shell';
           <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
         }
 
-        <button uiBtn type="submit" [extraClass]="'mt-6 w-full py-3.5'" [disabled]="submitting()">
+        <button uiBtn type="submit" [extraClass]="'mt-6 w-full'" [disabled]="submitting()">
           {{ submitting() ? 'Un momento…' : 'Crear cuenta' }}
         </button>
       </form>
 
       <div footer>
         ¿Ya tienes cuenta?
-        <a routerLink="/login" class="font-medium text-ink underline underline-offset-4">Entra</a>
+        <a
+          routerLink="/login"
+          class="font-medium text-ink underline decoration-ember decoration-2 underline-offset-4 hover:text-ember-ink"
+        >
+          Entra
+        </a>
       </div>
     </app-auth-shell>
   `,
@@ -107,6 +164,7 @@ export class RegisterPage {
   protected readonly submitting = signal(false);
   protected readonly serverError = signal<string | null>(null);
   protected readonly submitted = signal(false);
+  protected readonly showPassword = signal(false);
 
   protected readonly form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -125,10 +183,10 @@ export class RegisterPage {
 
   protected roleCls(role: 'PATIENT' | 'DOCTOR'): string {
     const selected = this.roleValue() === role;
-    return `touch-target pressable focus-ring flex cursor-pointer items-center justify-center gap-2 rounded-full border text-body font-medium ${
+    return `touch-target pressable focus-ring flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-full border text-body font-medium transition-colors ${
       selected
-        ? 'border-ink bg-primary text-white'
-        : 'border-line bg-card text-ink hover:bg-sand'
+        ? 'border-primary bg-primary text-cream shadow-[inset_0_1px_0_rgb(255_227_209/0.2)]'
+        : 'border-line bg-card text-ink hover:border-sand-deep hover:bg-sand'
     }`;
   }
 

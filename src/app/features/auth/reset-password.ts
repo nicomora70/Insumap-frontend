@@ -46,7 +46,7 @@ import { AuthShell } from './auth-shell';
           @if (serverError(); as msg) {
             <p role="alert" class="mt-1.5 text-small font-medium text-mz-red">{{ msg }}</p>
           }
-          <button uiBtn type="submit" [extraClass]="'mt-6 w-full py-3.5'" [disabled]="submitting()">
+          <button uiBtn type="submit" [extraClass]="'mt-6 w-full'" [disabled]="submitting()">
             {{ submitting() ? 'Guardando…' : 'Guardar contraseña' }}
           </button>
         </form>
@@ -54,7 +54,10 @@ import { AuthShell } from './auth-shell';
 
       <div footer>
         ¿Lista?
-        <a routerLink="/login" class="font-medium text-ink underline underline-offset-4">
+        <a
+          routerLink="/login"
+          class="font-medium text-ink underline decoration-ember decoration-2 underline-offset-4 hover:text-ember-ink"
+        >
           Entra con tu contraseña nueva
         </a>
       </div>
