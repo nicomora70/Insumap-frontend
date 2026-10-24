@@ -12,8 +12,9 @@ export type ExportFormat = 'pdf' | 'xlsx' | 'csv';
 @Component({
   selector: 'app-export-card',
   imports: [UiBtn, UiSegmented, LucideFileDown],
+  host: { class: '@container block' },
   template: `
-    <section class="card @container flex flex-col gap-3 p-4 @xl:flex-row @xl:items-center">
+    <section class="card flex flex-col gap-3 p-4 @xl:flex-row @xl:items-center">
       <div class="flex min-w-0 items-center gap-3 @xl:flex-1">
         <span
           class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ember-soft text-ember-ink"

@@ -150,7 +150,7 @@ interface ZoomState {
             <button
               type="button"
               (click)="askWhy()"
-              class="card-lift pressable focus-ring group flex min-h-[220px] flex-col justify-between rounded-[2rem] border border-ember/20 bg-ember-soft p-6 text-left sm:min-h-[280px] sm:p-8"
+              class="card-lift pressable focus-ring group flex min-h-[220px] flex-col justify-between rounded-[2rem] border border-ember/20 bg-ember-soft p-6 text-left sm:min-h-[220px] sm:p-8 lg:min-h-[280px]"
             >
               <span class="grid h-11 w-11 place-items-center rounded-full bg-card/60 text-ember-ink">
                 <svg lucideSparkles [size]="20" [strokeWidth]="2" aria-hidden="true"></svg>
