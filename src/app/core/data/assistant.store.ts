@@ -26,7 +26,15 @@ export class AssistantStore {
       .get<AssistantMessageOut[]>('/assistant/messages', { limit: 30 })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: (messages) => this.messages.set(messages),
+        next: (messages) => {
+          this.messages.set(messages);
+          const last = [...messages].reverse().find((m) => m.role === 'ASSISTANT');
+          if (last) {
+            // `provider: null` (no ausente) identifica una respuesta del template degradado.
+            // Un backend anterior no envía el campo, así que no se marca la sesión como degradada.
+            this.degraded.set(last.provider === null && last.blocked_by_guardrail !== true);
+          }
+        },
         error: (err: unknown) => this.error.set(toApiError(err).message),
       });
   }

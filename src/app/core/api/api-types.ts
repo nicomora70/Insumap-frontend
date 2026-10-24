@@ -657,6 +657,15 @@ export interface components {
             role: string;
             /** Content */
             content: string;
+            /** Provider */
+            provider?: string | null;
+            /** Model */
+            model?: string | null;
+            /**
+             * Blocked By Guardrail
+             * @default false
+             */
+            blocked_by_guardrail: boolean;
             /**
              * Created At
              * Format: date-time

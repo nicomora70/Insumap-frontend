@@ -85,7 +85,6 @@ import { UiBtn } from '../../shared/ui/button';
             </li>
           }
         </ul>
-        <div #bottom></div>
 
         @if (store.error() && store.messages().length > 0) {
           <p role="alert" class="mt-2.5 text-small font-medium text-mz-red">{{ store.error() }}</p>
@@ -128,6 +127,7 @@ import { UiBtn } from '../../shared/ui/button';
         <p class="mt-3 px-1 text-caption leading-relaxed text-muted">
           Insumap es un proyecto académico de apoyo a la rotación; no es un dispositivo médico.
         </p>
+        <div #bottom></div>
       </main>
     </app-shell>
   `,
@@ -172,7 +172,7 @@ export class AssistantPage {
   protected bubbleCls(m: AssistantMessageOut): string {
     return m.role === 'USER'
       ? 'max-w-[85%] rounded-3xl rounded-br-lg bg-primary px-5 py-3 text-body leading-relaxed text-cream shadow-[inset_0_1px_0_rgb(255_227_209/0.18)]'
-      : 'max-w-[85%] rounded-3xl rounded-bl-lg bg-sand px-5 py-3 text-body leading-relaxed text-ink';
+      : 'max-w-[85%] rounded-3xl rounded-bl-lg bg-sand px-5 py-3 text-body leading-relaxed text-ink sm:max-w-[65ch]';
   }
 
   protected onInput(event: Event): void {
