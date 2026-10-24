@@ -106,7 +106,11 @@ interface ZoomState {
 
             <div class="mt-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
               <!-- Columna mapa -->
-              <div class="space-y-3" [class.hidden]="view() === 'historial'" [class.lg:block]="true">
+              <div
+                class="space-y-3 lg:sticky lg:top-24 lg:self-start"
+                [class.hidden]="view() === 'historial'"
+                [class.lg:block]="true"
+              >
                 @if (patientMap().loading) {
                   <div class="h-96 animate-pulse rounded-3xl bg-sand" aria-label="Cargando mapa"></div>
                 } @else if (patientMap().error; as msg) {

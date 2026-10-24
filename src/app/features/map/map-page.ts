@@ -21,12 +21,6 @@ import { MicrozoneSheet } from './microzone-sheet';
 import type { RegisteredEvent } from './microzone-sheet';
 import { ZoomGrid } from './zoom-grid';
 
-const WORD: Record<CellColor, string> = {
-  RED: 'recuperando',
-  YELLOW: 'casi lista',
-  GREEN: 'lista',
-};
-
 const DOT: Record<CellColor, string> = {
   RED: 'bg-mz-red',
   YELLOW: 'bg-mz-yellow',
@@ -156,64 +150,26 @@ interface ZoomState {
             <button
               type="button"
               (click)="askWhy()"
-              class="card-lift pressable focus-ring group flex min-h-[250px] flex-col justify-between rounded-[2rem] border border-ember/20 bg-ember-soft p-6 text-left sm:min-h-[280px] sm:p-8"
+              class="card-lift pressable focus-ring group flex min-h-[220px] flex-col justify-between rounded-[2rem] border border-ember/20 bg-ember-soft p-6 text-left sm:min-h-[280px] sm:p-8"
             >
               <span class="grid h-11 w-11 place-items-center rounded-full bg-card/60 text-ember-ink">
                 <svg lucideSparkles [size]="20" [strokeWidth]="2" aria-hidden="true"></svg>
               </span>
-              <div class="mt-8">
+              <div class="mt-6 sm:mt-8">
                 <p class="text-h3 text-ink-strong">¿Por qué esta zona?</p>
                 <p class="mt-2 text-small leading-relaxed text-ink-soft">
                   Pregúntale al asistente y te explica lo que dice tu mapa.
                 </p>
               </div>
-              <span class="mt-6 flex items-center justify-between text-small font-medium text-ink-strong">
+              <span class="mt-5 flex items-center justify-between text-small font-medium text-ink-strong sm:mt-6">
                 Preguntar
                 <svg lucideChevronRight [size]="18" aria-hidden="true"></svg>
               </span>
             </button>
           </section>
 
-          <!-- Riel de macrozonas -->
-          <section class="mt-10">
-            <div class="flex flex-wrap items-end justify-between gap-2">
-              <h2 class="text-h2 text-ink-strong">Tus zonas</h2>
-              <p class="text-small text-muted">Cuatro zonas. Una sola decisión.</p>
-            </div>
-            <div
-              class="no-scrollbar -mx-5 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0"
-            >
-              @for (macro of macros; track macro) {
-                <button
-                  type="button"
-                  (click)="openMacro(macro)"
-                  class="card-lift pressable focus-ring group flex min-w-[230px] snap-start flex-col justify-between rounded-[1.75rem] border border-line bg-card p-5 text-left lg:min-w-0"
-                >
-                  <div class="flex items-start justify-between gap-3">
-                    <span class="text-h3 text-ink-strong">{{ macroLabel(macro) }}</span>
-                    <span
-                      class="grid h-9 w-9 place-items-center rounded-full bg-sand text-ink transition-colors group-hover:bg-primary group-hover:text-cream"
-                    >
-                      <svg lucideChevronRight [size]="17" aria-hidden="true"></svg>
-                    </span>
-                  </div>
-                  <div class="mt-10">
-                    <p class="index-label text-h1 leading-none text-ink-strong">
-                      {{ macroReadyPct(macro) }}<span class="align-top text-h3">%</span>
-                    </p>
-                    <p class="mt-2 text-caption text-muted">microzonas listas</p>
-                    <p class="mt-3 flex items-center gap-1.5 text-small text-ink-soft">
-                      <span class="h-1.5 w-1.5 rounded-full" [class]="dotCls(macro)"></span>
-                      {{ macroWord(macro) }}
-                    </p>
-                  </div>
-                </button>
-              }
-            </div>
-          </section>
-
           <!-- Mapa -->
-          <section class="mt-12">
+          <section class="mt-10">
             <div class="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p class="text-caption font-medium tracking-[0.08em] text-muted">01 · Tu mapa</p>
@@ -286,6 +242,48 @@ interface ZoomState {
                 </div>
               }
             }
+          </section>
+
+          <!-- Riel de macrozonas -->
+          <section class="mt-12">
+            <div class="flex flex-wrap items-end justify-between gap-2">
+              <h2 class="text-h2 text-ink-strong">Tus zonas</h2>
+              <p class="hidden text-small text-muted sm:block">Cuatro zonas. Una sola decisión.</p>
+            </div>
+            <div
+              class="no-scrollbar -mx-5 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0"
+            >
+              @for (macro of macros; track macro) {
+                <button
+                  type="button"
+                  (click)="openMacro(macro)"
+                  class="card-lift pressable focus-ring group flex min-w-[230px] snap-start flex-col justify-between rounded-[1.75rem] border border-line bg-card p-5 text-left lg:min-w-0"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <span class="text-h3 text-ink-strong">{{ macroLabel(macro) }}</span>
+                    <span
+                      class="grid h-9 w-9 place-items-center rounded-full bg-sand text-ink transition-colors group-hover:bg-primary group-hover:text-cream"
+                    >
+                      <svg lucideChevronRight [size]="17" aria-hidden="true"></svg>
+                    </span>
+                  </div>
+                  <div class="mt-8">
+                    <p class="index-label text-h1 leading-none text-ink-strong">
+                      {{ macroReadyPct(macro) }}<span class="align-top text-h3">%</span>
+                    </p>
+                    <p class="mt-2 text-caption text-muted">microzonas listas</p>
+                    <p class="mt-3 flex items-center gap-1.5 text-small text-ink-soft">
+                      <span class="h-1.5 w-1.5 rounded-full" [class]="dotCls(macro)"></span>
+                      @if (macroPendingCount(macro) === 0) {
+                        Todo listo
+                      } @else {
+                        {{ macroPendingCount(macro) }} por recuperar
+                      }
+                    </p>
+                  </div>
+                </button>
+              }
+            </div>
           </section>
 
           <p class="mt-12 text-caption leading-relaxed text-muted">
@@ -403,10 +401,10 @@ export class MapPage {
     return Math.round((cells.filter((cell) => cell.color === 'GREEN').length / cells.length) * 100);
   }
 
-  protected macroWord(macro: MacroCode): string {
+  protected macroPendingCount(macro: MacroCode): number {
     const map = this.mapStore.map();
-    if (!map) return '';
-    return WORD[worstColor(macroCells(map, macro))];
+    if (!map) return 0;
+    return macroCells(map, macro).filter((cell) => cell.color !== 'GREEN').length;
   }
 
   protected dotCls(macro: MacroCode): string {

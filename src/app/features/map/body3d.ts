@@ -153,7 +153,7 @@ const LABEL_CLASS: Record<CellColor, string> = {
       @for (macro of macros; track macro) {
         <span
           #lbl
-          class="pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded-full border border-line/70 bg-card/85 px-2.5 py-1.5 text-[11px] font-semibold shadow-[0_6px_18px_rgb(71_32_28/0.10)] backdrop-blur-md"
+          class="pointer-events-none absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-line/70 bg-card/85 px-2.5 py-1.5 text-[11px] font-semibold shadow-[0_6px_18px_rgb(71_32_28/0.10)] backdrop-blur-md"
           [class]="labelClass(macro)"
         >
           @if (suggestionMacro() === macro) {

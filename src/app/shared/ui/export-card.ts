@@ -13,8 +13,8 @@ export type ExportFormat = 'pdf' | 'xlsx' | 'csv';
   selector: 'app-export-card',
   imports: [UiBtn, UiSegmented, LucideFileDown],
   template: `
-    <section class="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-      <div class="flex min-w-0 items-center gap-3 sm:flex-1">
+    <section class="card @container flex flex-col gap-3 p-4 @xl:flex-row @xl:items-center">
+      <div class="flex min-w-0 items-center gap-3 @xl:flex-1">
         <span
           class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ember-soft text-ember-ink"
           aria-hidden="true"
@@ -27,7 +27,7 @@ export type ExportFormat = 'pdf' | 'xlsx' | 'csv';
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <div class="min-w-0 flex-1 sm:w-52">
+        <div class="min-w-0 flex-1 @xl:w-52 @xl:flex-none">
           <ui-segmented
             [options]="formatOptions"
             [value]="format()"
@@ -46,7 +46,7 @@ export type ExportFormat = 'pdf' | 'xlsx' | 'csv';
         </button>
       </div>
       @if (error(); as msg) {
-        <p role="alert" class="text-small font-medium text-mz-red sm:basis-full">{{ msg }}</p>
+        <p role="alert" class="text-small font-medium text-mz-red @xl:basis-full">{{ msg }}</p>
       }
     </section>
   `,

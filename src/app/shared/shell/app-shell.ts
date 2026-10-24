@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   LucideBellRing,
@@ -82,9 +82,7 @@ import type { ShellTab } from '../../core/nav';
 
       <!-- Barra inferior flotante: solo móvil/tablet -->
       <nav class="fixed inset-x-3 bottom-3 z-30 lg:hidden" aria-label="Navegación principal">
-        <ul
-          class="chrome-translucent flex w-full items-stretch rounded-full border border-line/70 px-2 py-1.5 shadow-float"
-        >
+        <ul [class]="tabBarCls()">
           @for (t of tabs(); track t.id) {
             <li class="flex-1">
               <a
@@ -130,6 +128,13 @@ export class AppShell {
   readonly tabs = input.required<ShellTab[]>();
   readonly active = input.required<string>();
   readonly profileRoute = input<string>('/perfil');
+
+  protected readonly tabBarCls = computed(
+    () =>
+      `chrome-translucent flex items-stretch rounded-full border border-line/70 px-2 py-1.5 shadow-float ${
+        this.tabs().length <= 2 ? 'mx-auto w-full max-w-[260px]' : 'w-full'
+      }`,
+  );
 
   protected navLinkCls(id: string): string {
     const on = id === this.active();

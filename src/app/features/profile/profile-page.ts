@@ -37,8 +37,8 @@ import type { SegmentOption } from '../../shared/ui/segmented';
         <section class="panel-ink flex items-center gap-4 rounded-[2rem] p-5 sm:p-6" aria-label="Tu cuenta">
           <ui-avatar [name]="userName()" [size]="64" />
           <div class="min-w-0">
-            <p class="truncate text-h3 text-cream">{{ userName() }}</p>
-            <p class="truncate text-small text-cream/65">
+            <p class="text-h3 leading-tight break-words text-cream">{{ userName() }}</p>
+            <p class="mt-1 text-small leading-relaxed break-words text-cream/65">
               {{ user()?.email }} · {{ user()?.role === 'DOCTOR' ? 'Médico' : 'Paciente' }}
             </p>
           </div>

@@ -67,7 +67,12 @@ type PushUi = 'idle' | 'working' | PushState;
             class="pressable focus-ring touch-target inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-mz-green-soft px-2 text-small font-medium text-mz-green disabled:opacity-50"
           >
             <svg lucideCheck [size]="15" [strokeWidth]="2.5" aria-hidden="true"></svg>
-            {{ reminders.confirmingId() === reminder().id ? '…' : 'La apliqué' }}
+            @if (reminders.confirmingId() === reminder().id) {
+              …
+            } @else {
+              <span class="sm:hidden">Puesta</span>
+              <span class="hidden sm:inline">La apliqué</span>
+            }
           </button>
         </div>
       }
@@ -260,14 +265,14 @@ export class ReminderCard {
                     [value]="dose.label ?? ''"
                     placeholder="Ej. Antes del almuerzo"
                     (input)="setLabel(i, $event)"
-                    [class]="inputSm + ' min-w-0 flex-1'"
+                    [class]="inputSm + ' order-3 w-full min-w-0 sm:order-none sm:w-auto sm:flex-1'"
                   />
                   @if (doses().length > 1) {
                     <button
                       type="button"
                       [attr.aria-label]="'Quitar dosis ' + (i + 1)"
                       (click)="removeDose(i)"
-                      class="pressable focus-ring touch-target grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-full bg-mz-red-soft text-mz-red"
+                      class="pressable focus-ring touch-target order-2 ml-auto grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-full bg-mz-red-soft text-mz-red sm:order-none sm:ml-0"
                     >
                       <svg lucideTrash [size]="17" aria-hidden="true"></svg>
                     </button>
