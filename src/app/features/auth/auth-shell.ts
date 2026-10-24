@@ -79,7 +79,7 @@ import { Component, input } from '@angular/core';
           </svg>
         </div>
 
-        <p class="relative max-w-sm text-caption leading-relaxed text-cream/45">
+        <p class="relative max-w-sm text-caption leading-relaxed text-cream/55">
           Proyecto académico de apoyo a la rotación. No es un dispositivo médico.
         </p>
       </aside>

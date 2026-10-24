@@ -21,8 +21,8 @@
   --color-ink: #47201c;
   --color-ink-strong: #2f100c;
   --color-ink-soft: #63352d;
-  /* 4.98:1 sobre app-bg. */
-  --color-muted: #746958;
+  /* 5.43:1 sobre app-bg y 4.82:1 sobre sand. */
+  --color-muted: #6f6353;
 
   /* --- Acentos tierra --- */
   --color-honey: #f9b859;

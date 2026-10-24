@@ -80,7 +80,7 @@ hay excepción.
 |---|---|---|
 | `--color-ink` | `#47201c` | Texto principal (13.05:1 sobre crema) |
 | `--color-ink-strong` | `#2f100c` | Titulares |
-| `--color-muted` | `#746958` | Texto secundario (4.98:1 sobre crema) |
+| `--color-muted` | `#6f6353` | Texto secundario (5.43:1 sobre crema, 4.82:1 sobre arena) |
 | `--color-primary` | `#47201c` | CTA principal y píldora de navegación |
 | `--color-primary-strong` | `#2f100c` | Hover del CTA |
 | `--color-ring` | `#c2410c` | Anillo de foco (4.80:1) |
@@ -245,7 +245,8 @@ principal usa la variante clara (`soft`/`glass`), no oxblood sobre oxblood.
 ## 8. Accesibilidad
 
 - **Contraste mínimo 4.5:1** en texto normal y 3:1 en texto ≥24px. `--color-muted` sobre crema
-  está en **4.98:1**; `--color-ink` en **13.05:1**; `--color-ember-ink` en **4.80:1**.
+  está en **5.43:1** (4.82:1 sobre arena); `--color-ink` en **13.05:1**; `--color-ember-ink` en
+  **4.80:1**.
 - **Prohibido** texto claro sobre ámbar o miel (contraste <2:1). Sobre esos fondos, siempre tinta
   oscura. `--color-ember` (`#ff8e3e`) solo se usa como relleno o sobre oxblood; sobre crema da
   **2.12:1**.

@@ -216,7 +216,7 @@ interface ZoomState {
                   placeholder="Código del paciente"
                   aria-label="Código del paciente"
                   autocapitalize="characters"
-                  [class]="inputSm + ' min-w-0 flex-1 border-white/15 bg-white/10 font-mono uppercase text-cream placeholder:text-cream/40 focus:border-ember focus:bg-white/15'"
+                  [class]="inputSm + ' min-w-0 flex-1 border-white/15 bg-white/10 font-mono uppercase text-cream placeholder:text-cream/55 focus:border-ember focus:bg-white/15'"
                 />
                 <button
                   uiBtn
