@@ -28,9 +28,9 @@ type PushUi = 'idle' | 'working' | PushState;
   selector: 'app-reminder-card',
   imports: [UiBtn, LucideClock, LucideCheck],
   template: `
-    <li class="card p-5">
+    <li [class]="cardCls()">
       <div class="flex items-center justify-between gap-2">
-        <p class="text-title font-medium text-ink-strong">{{ dueText() }}</p>
+        <p [class]="titleCls()">{{ dueText() }}</p>
         <span [class]="pillCls()">
           <svg lucideClock [size]="13" [strokeWidth]="2.2" aria-hidden="true"></svg>
           {{ pending() ? 'Pendiente' : 'Programada' }}
@@ -41,7 +41,8 @@ type PushUi = 'idle' | 'working' | PushState;
         <button
           uiBtn
           type="button"
-          [extraClass]="'mt-4 w-full py-3'"
+          [variant]="featured() ? 'soft' : 'primary'"
+          [extraClass]="'mt-4 w-full'"
           [disabled]="map.registerPending()"
           (click)="register(zone)"
         >
@@ -72,7 +73,7 @@ type PushUi = 'idle' | 'working' | PushState;
       }
 
       @if (error(); as msg) {
-        <p role="alert" class="mt-2.5 text-small font-medium text-mz-red">{{ msg }}</p>
+        <p role="alert" [class]="errorCls()">{{ msg }}</p>
       }
     </li>
   `,
@@ -83,6 +84,7 @@ export class ReminderCard {
   private readonly toast = inject(ToastService);
 
   readonly reminder = input.required<ReminderOut>();
+  readonly featured = input(false);
 
   protected readonly minutes = [15, 30, 60];
   protected readonly suggested = signal<string | null>(null);
@@ -94,14 +96,32 @@ export class ReminderCard {
   });
   protected readonly dueText = computed(() => formatDue(this.reminder().due_at));
 
+  protected cardCls(): string {
+    return this.featured()
+      ? 'panel-ink rounded-[2rem] p-5 text-cream sm:p-6'
+      : 'card p-5';
+  }
+
+  protected titleCls(): string {
+    return `text-title font-medium ${this.featured() ? 'text-cream' : 'text-ink-strong'}`;
+  }
+
   protected pillCls(): string {
-    return `inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-caption font-medium ${
-      this.pending() ? 'bg-honey-soft text-olive' : 'bg-sand text-muted'
-    }`;
+    if (this.pending()) return 'inline-flex shrink-0 items-center gap-1.5 rounded-full bg-honey-soft px-3 py-1.5 text-caption font-semibold text-olive';
+    return this.featured()
+      ? 'inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-caption font-semibold text-cream/70'
+      : 'inline-flex shrink-0 items-center gap-1.5 rounded-full bg-sand px-3 py-1.5 text-caption font-semibold text-muted';
   }
 
   protected snoozeCls(): string {
-    return 'pressable focus-ring touch-target cursor-pointer rounded-full bg-sand text-small font-medium text-ink hover:bg-sand-deep disabled:opacity-50';
+    if (this.featured()) {
+      return 'pressable focus-ring touch-target cursor-pointer rounded-full bg-white/10 text-small font-medium text-cream transition-colors hover:bg-white/15 disabled:opacity-50';
+    }
+    return 'pressable focus-ring touch-target cursor-pointer rounded-full bg-sand text-small font-medium text-ink transition-colors hover:bg-sand-deep disabled:opacity-50';
+  }
+
+  protected errorCls(): string {
+    return `mt-2.5 text-small font-medium ${this.featured() ? 'text-ember' : 'text-mz-red'}`;
   }
 
   protected snooze(minutes: number): void {
@@ -149,29 +169,77 @@ export class ReminderCard {
   ],
   template: `
     <app-shell [userName]="userName()" [tabs]="tabs" active="dosis">
-      <main class="page-enter space-y-4 pb-10">
-        <h1 class="text-h1 font-normal text-ink-strong">
-          Tus dosis
-        </h1>
+      <main class="page-enter space-y-5 pb-10">
+        <header>
+          <p class="text-caption font-medium tracking-[0.08em] text-muted">Dosis</p>
+          <h1 class="mt-2 text-h1 text-ink-strong">
+            Tu ritmo, <span class="accent">a tu manera</span>.
+          </h1>
+          <p class="mt-3 max-w-lg text-body leading-relaxed text-muted">
+            Horarios, recordatorios y la próxima dosis en un solo lugar.
+          </p>
+        </header>
+
+        <!-- Próximas dosis -->
+        <section aria-label="Próximas dosis" class="space-y-2">
+          <div class="flex items-end justify-between gap-2">
+            <h2 class="text-h3 text-ink-strong">Próximas dosis</h2>
+            @if (reminders.upcoming().length > 0) {
+              <span class="text-caption text-muted">{{ reminders.upcoming().length }} programadas</span>
+            }
+          </div>
+          @if (reminders.loading() && reminders.upcoming().length === 0) {
+            <div class="h-28 animate-pulse rounded-[2rem] bg-sand" aria-label="Cargando recordatorios"></div>
+          } @else if (reminders.error() && reminders.upcoming().length === 0) {
+            <div class="card p-5">
+              <button
+                uiBtn
+                variant="outline"
+                type="button"
+                [extraClass]="'w-full'"
+                (click)="reminders.refresh()"
+              >
+                No se pudieron cargar. Toca para reintentar.
+              </button>
+            </div>
+          } @else if (reminders.upcoming().length === 0) {
+            <div class="card p-5">
+              <p class="text-small text-muted">
+                Sin dosis próximas. Guarda tus horarios abajo y aparecerán aquí.
+              </p>
+            </div>
+          } @else {
+            <ul class="space-y-2">
+              @for (item of reminders.upcoming(); track item.id; let first = $first) {
+                <app-reminder-card [reminder]="item" [featured]="first" />
+              }
+            </ul>
+          }
+        </section>
+
         <!-- Cronograma -->
         <section class="card p-5" aria-label="Cronograma de dosis">
-          <h2 class="flex items-center gap-2 text-title text-ink-strong">
-            <svg lucideClock [size]="18" aria-hidden="true"></svg>
-            Horarios de mis dosis
-          </h2>
-          <p class="mt-1 text-small text-muted">De 1 a 6 dosis al día, según tu tratamiento.</p>
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="flex items-center gap-2 text-h3 text-ink-strong">
+                <svg lucideClock [size]="19" aria-hidden="true"></svg>
+                Horarios
+              </h2>
+              <p class="mt-1 text-small text-muted">De 1 a 6 dosis al día, según tu tratamiento.</p>
+            </div>
+            <span class="shrink-0 rounded-full bg-sand px-3 py-1.5 text-caption font-semibold text-muted">
+              {{ doses().length }} / 6
+            </span>
+          </div>
 
           @if (reminders.loading() && !reminders.schedule()) {
-            <div
-              class="mt-4 h-24 animate-pulse rounded-2xl bg-sand"
-              aria-label="Cargando cronograma"
-            ></div>
+            <div class="mt-4 h-24 animate-pulse rounded-2xl bg-sand" aria-label="Cargando cronograma"></div>
           } @else if (reminders.error() && !reminders.schedule()) {
             <button
               uiBtn
               variant="outline"
               type="button"
-              [extraClass]="'mt-4 w-full py-3'"
+              [extraClass]="'mt-4 w-full'"
               (click)="reminders.refresh()"
             >
               No se pudo cargar el cronograma. Toca para reintentar.
@@ -179,13 +247,13 @@ export class ReminderCard {
           } @else {
             <ul class="mt-4 space-y-2">
               @for (dose of doses(); track $index; let i = $index) {
-                <li class="flex items-center gap-2">
+                <li class="flex flex-wrap items-center gap-2">
                   <input
                     type="time"
                     [attr.aria-label]="'Hora de la dosis ' + (i + 1)"
                     [value]="dose.time"
                     (change)="setTime(i, $event)"
-                    [class]="inputSm + ' w-32'"
+                    [class]="inputSm + ' w-36'"
                   />
                   <input
                     [attr.aria-label]="'Nombre de la dosis ' + (i + 1)"
@@ -199,9 +267,9 @@ export class ReminderCard {
                       type="button"
                       [attr.aria-label]="'Quitar dosis ' + (i + 1)"
                       (click)="removeDose(i)"
-                      class="pressable focus-ring touch-target w-11 shrink-0 cursor-pointer rounded-full bg-mz-red-soft text-mz-red"
+                      class="pressable focus-ring touch-target grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-full bg-mz-red-soft text-mz-red"
                     >
-                      <svg lucideTrash [size]="17" class="mx-auto" aria-hidden="true"></svg>
+                      <svg lucideTrash [size]="17" aria-hidden="true"></svg>
                     </button>
                   }
                 </li>
@@ -212,7 +280,7 @@ export class ReminderCard {
                 uiBtn
                 variant="outline"
                 type="button"
-                [extraClass]="'mt-3 w-full py-3'"
+                [extraClass]="'mt-3 w-full'"
                 (click)="addDose()"
               >
                 <svg lucidePlus [size]="17" aria-hidden="true"></svg>
@@ -225,7 +293,7 @@ export class ReminderCard {
             <button
               uiBtn
               type="button"
-              [extraClass]="'mt-4 w-full py-3.5'"
+              [extraClass]="'mt-4 w-full'"
               [disabled]="reminders.saving()"
               (click)="save()"
             >
@@ -234,48 +302,22 @@ export class ReminderCard {
           }
         </section>
 
-        <!-- Próximas dosis -->
-        <section aria-label="Próximas dosis" class="space-y-2">
-          <h2 class="px-1 text-title text-ink-strong">Próximas dosis</h2>
-          @if (reminders.loading() && reminders.upcoming().length === 0) {
-            <div
-              class="h-24 animate-pulse rounded-3xl bg-sand"
-              aria-label="Cargando recordatorios"
-            ></div>
-          } @else if (reminders.error() && reminders.upcoming().length === 0) {
-            <div class="card p-5">
-              <button
-                uiBtn
-                variant="outline"
-                type="button"
-                [extraClass]="'w-full py-3'"
-                (click)="reminders.refresh()"
-              >
-                No se pudieron cargar. Toca para reintentar.
-              </button>
-            </div>
-          } @else if (reminders.upcoming().length === 0) {
-            <div class="card p-5">
-              <p class="text-small text-muted">
-                Sin dosis próximas. Guarda tus horarios arriba y aparecerán aquí.
-              </p>
-            </div>
-          } @else {
-            <ul class="space-y-2">
-              @for (item of reminders.upcoming(); track item.id) {
-                <app-reminder-card [reminder]="item" />
-              }
-            </ul>
-          }
-        </section>
-
         <!-- Push -->
-        <section class="card p-5">
+        <section class="card flex flex-wrap items-center justify-between gap-3 p-4" aria-label="Notificaciones">
+          <div class="flex min-w-0 items-center gap-3">
+            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ember-soft text-ember-ink">
+              <svg lucideBellRing [size]="18" aria-hidden="true"></svg>
+            </span>
+            <div class="min-w-0">
+              <p class="text-small font-medium text-ink-strong">Notificaciones push</p>
+              <p class="text-caption text-muted">Recibe el aviso de tu próxima dosis.</p>
+            </div>
+          </div>
           <button
             uiBtn
             variant="outline"
             type="button"
-            [extraClass]="'w-full py-3'"
+            [extraClass]="'w-full shrink-0 sm:w-auto'"
             [disabled]="pushState() === 'working' || pushState() === 'subscribed'"
             (click)="enablePush()"
           >
@@ -296,7 +338,7 @@ export class ReminderCard {
             {{ pushText() }}
           </button>
         </section>
-        <p class="px-1 text-caption text-muted">
+        <p class="px-1 text-caption leading-relaxed text-muted">
           En iPhone el push solo llega con la app instalada (iOS 16.4+). Esta lista es el respaldo
           dentro de la app.
         </p>
@@ -325,13 +367,13 @@ export class DosesPage {
       case 'working':
         return 'Activando…';
       case 'subscribed':
-        return 'Notificaciones activadas en este dispositivo';
+        return 'Activadas';
       case 'denied':
-        return 'Permiso denegado: actívalo en el navegador';
+        return 'Permiso denegado';
       case 'unsupported':
-        return 'Este navegador no soporta push';
+        return 'No disponible';
       default:
-        return 'Activar notificaciones push';
+        return 'Activar';
     }
   });
 

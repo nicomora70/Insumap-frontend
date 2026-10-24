@@ -18,18 +18,29 @@ import { UiBtn } from '../../shared/ui/button';
       active="perfil"
       profileRoute="/cuenta"
     >
-      <main class="page-enter space-y-3">
-        <h1 class="text-h1 font-normal text-ink-strong">
-          Tu cuenta
-        </h1>
-        <section class="card flex items-center gap-4 p-5" aria-label="Tu cuenta">
-          <ui-avatar [name]="userName()" [size]="56" />
+      <main class="page-enter space-y-4">
+        <header>
+          <p class="text-caption font-medium tracking-[0.08em] text-muted">Cuenta</p>
+          <h1 class="mt-2 text-h1 text-ink-strong">
+            Tu cuenta, <span class="accent">en orden</span>.
+          </h1>
+        </header>
+
+        <section class="panel-ink flex items-center gap-4 rounded-[2rem] p-5 sm:p-6" aria-label="Tu cuenta">
+          <ui-avatar [name]="userName()" [size]="64" />
           <div class="min-w-0">
-            <p class="truncate text-h3 font-medium text-ink-strong">{{ userName() }}</p>
-            <p class="truncate text-small text-muted">{{ user()?.email }} · Médico</p>
+            <p class="truncate text-h3 text-cream">{{ userName() }}</p>
+            <p class="truncate text-small text-cream/65">{{ user()?.email }} · Médico</p>
           </div>
         </section>
-        <button uiBtn variant="outline" type="button" [extraClass]="'w-full py-3 text-mz-red'" (click)="logout()">
+
+        <button
+          uiBtn
+          variant="ghost"
+          type="button"
+          [extraClass]="'w-full justify-start text-mz-red hover:bg-mz-red-soft'"
+          (click)="logout()"
+        >
           <svg lucideLogOut [size]="17" aria-hidden="true"></svg>
           Cerrar sesión
         </button>

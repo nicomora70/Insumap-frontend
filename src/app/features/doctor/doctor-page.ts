@@ -1,5 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { LucideArrowLeft, LucideChevronRight, LucideEye, LucideLink2 } from '@lucide/angular';
+import {
+  LucideArrowLeft,
+  LucideChevronRight,
+  LucideEye,
+  LucideLink2,
+  LucideSearch,
+} from '@lucide/angular';
 import { toApiError } from '../../core/api/api-error';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -15,6 +21,7 @@ import { INPUT_SM } from '../../shared/ui/classes';
 import { UiSegmented } from '../../shared/ui/segmented';
 import type { SegmentOption } from '../../shared/ui/segmented';
 import { ExportCard } from '../../shared/ui/export-card';
+import { UiEmpty } from '../../shared/ui/empty';
 import { UiPill } from '../../shared/ui/status-pill';
 import { HistoryList } from '../history/history-list';
 import { Body3D } from '../map/body3d';
@@ -41,6 +48,7 @@ interface ZoomState {
     UiBtn,
     UiSegmented,
     UiPill,
+    UiEmpty,
     ExportCard,
     HistoryList,
     Body3D,
@@ -49,6 +57,7 @@ interface ZoomState {
     LucideChevronRight,
     LucideEye,
     LucideLink2,
+    LucideSearch,
   ],
   template: `
     <app-shell
@@ -61,10 +70,10 @@ interface ZoomState {
         @if (detail(); as sel) {
           <!-- P11: detalle del paciente (solo lectura) -->
           <div>
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
               <button
                 uiBtn
-                variant="outline"
+                variant="soft"
                 [icon]="true"
                 type="button"
                 [extraClass]="'shrink-0'"
@@ -73,9 +82,12 @@ interface ZoomState {
               >
                 <svg lucideArrowLeft [size]="20" aria-hidden="true"></svg>
               </button>
-              <h2 class="text-h3 text-ink-strong">{{ sel.name }}</h2>
+              <div class="min-w-0">
+                <p class="text-caption font-medium tracking-[0.08em] text-muted">Paciente</p>
+                <h2 class="mt-1 text-h2 text-ink-strong">{{ sel.name }}</h2>
+              </div>
               <span
-                class="inline-flex items-center gap-1.5 rounded-full bg-sand px-3 py-1 text-caption font-medium text-muted"
+                class="inline-flex items-center gap-1.5 rounded-full bg-sand px-3 py-1.5 text-caption font-semibold text-muted sm:ml-2"
               >
                 <svg lucideEye [size]="13" aria-hidden="true"></svg>
                 Solo lectura
@@ -123,7 +135,9 @@ interface ZoomState {
                       />
                     </section>
                   } @else {
-                    <section class="card overflow-hidden p-2">
+                    <section
+                      class="card-feature overflow-hidden border border-line bg-gradient-to-b from-sand/80 via-sand/40 to-card p-2 sm:p-3"
+                    >
                       <app-body3d
                         [map]="map"
                         [suggestionMacro]="null"
@@ -134,7 +148,7 @@ interface ZoomState {
                   @if (cell(); as c) {
                     <section class="card p-5">
                       <div class="flex items-center justify-between gap-2">
-                        <p class="tnum text-body font-medium text-ink">{{ c.id }}</p>
+                        <p class="tnum text-h3 text-ink-strong">{{ c.id }}</p>
                         <div class="flex items-center gap-2">
                           <ui-pill [color]="c.color" />
                           <button
@@ -168,28 +182,43 @@ interface ZoomState {
           </div>
         } @else {
           <!-- P10: lista de pacientes -->
-          <div class="space-y-3">
-            <h1 class="text-h1 font-normal text-ink-strong">
-              Tus pacientes
-            </h1>
-            <section class="card p-5" aria-label="Agregar paciente">
-              <h2 class="flex items-center gap-2 text-title text-ink-strong">
-                <svg lucideLink2 [size]="17" aria-hidden="true"></svg>
-                Agregar paciente
-              </h2>
-              <div class="mt-3 flex gap-2">
+          <div class="space-y-4">
+            <header>
+              <p class="text-caption font-medium tracking-[0.08em] text-muted">Pacientes</p>
+              <h1 class="mt-2 text-h1 text-ink-strong">
+                Tus pacientes, <span class="accent">de un vistazo</span>.
+              </h1>
+              <p class="mt-3 max-w-lg text-body leading-relaxed text-muted">
+                Mapa, historial y vínculos en un solo lugar.
+              </p>
+            </header>
+
+            <section class="panel-ink rounded-[2rem] p-5 sm:p-6" aria-label="Agregar paciente">
+              <div class="flex items-start gap-3">
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/10 text-cream">
+                  <svg lucideLink2 [size]="18" aria-hidden="true"></svg>
+                </span>
+                <div>
+                  <h2 class="text-h3 text-cream">Agregar paciente</h2>
+                  <p class="mt-1 text-small leading-relaxed text-cream/65">
+                    Pide su código de 8 caracteres. El vínculo queda activo hasta que lo revoques.
+                  </p>
+                </div>
+              </div>
+              <div class="mt-4 flex flex-col gap-2 sm:flex-row">
                 <input
                   [value]="code()"
                   (input)="onCode($event)"
                   placeholder="Código del paciente"
                   aria-label="Código del paciente"
                   autocapitalize="characters"
-                  [class]="inputSm + ' min-w-0 flex-1 font-mono uppercase'"
+                  [class]="inputSm + ' min-w-0 flex-1 border-white/15 bg-white/10 font-mono uppercase text-cream placeholder:text-cream/40 focus:border-ember focus:bg-white/15'"
                 />
                 <button
                   uiBtn
+                  variant="soft"
                   type="button"
-                  [extraClass]="'shrink-0 py-3'"
+                  [extraClass]="'shrink-0'"
                   [disabled]="links.redeeming() || !code().trim()"
                   (click)="redeem()"
                 >
@@ -197,29 +226,45 @@ interface ZoomState {
                 </button>
               </div>
               @if (codeError(); as msg) {
-                <p role="alert" class="mt-2.5 text-small font-medium text-mz-red">{{ msg }}</p>
+                <p role="alert" class="mt-2.5 text-small font-medium text-ember">{{ msg }}</p>
               }
             </section>
 
             @if (links.loading() && links.links().length === 0) {
               <div class="h-20 animate-pulse rounded-3xl bg-sand" aria-label="Cargando pacientes"></div>
             } @else if (!links.loading() && links.links().length === 0) {
-              <div class="card p-5">
-                <p class="text-center text-small text-muted">
-                  Sin pacientes vinculados. Pide a tu paciente su código de 8 caracteres.
-                </p>
+              <div class="card p-4">
+                <ui-empty
+                  title="Sin pacientes vinculados"
+                  message="Pide su código de 8 caracteres y agrégalo arriba."
+                />
               </div>
-            }
-            @if (links.links().length > 0) {
-              <ul class="card divide-y divide-line overflow-hidden">
-                @for (link of links.links(); track link.id) {
+            } @else {
+              <div class="relative">
+                <svg
+                  lucideSearch
+                  [size]="18"
+                  [strokeWidth]="2"
+                  class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
+                  aria-hidden="true"
+                ></svg>
+                <input
+                  [value]="query()"
+                  (input)="onQuery($event)"
+                  placeholder="Buscar por nombre"
+                  aria-label="Buscar paciente"
+                  [class]="inputSm + ' w-full pl-11'"
+                />
+              </div>
+              <ul class="card overflow-hidden">
+                @for (link of filteredLinks(); track link.id) {
                   <li>
                     <button
                       type="button"
                       (click)="openDetail(link.patient_id, link.patient_name)"
                       class="pressable focus-ring flex w-full cursor-pointer items-center gap-3.5 px-5 py-4 text-left hover:bg-sand"
                     >
-                      <ui-avatar [name]="link.patient_name" [size]="44" />
+                      <ui-avatar [name]="link.patient_name" [size]="48" />
                       <span class="min-w-0 flex-1 truncate text-body font-medium text-ink">
                         {{ link.patient_name }}
                       </span>
@@ -228,6 +273,11 @@ interface ZoomState {
                   </li>
                 }
               </ul>
+              @if (filteredLinks().length === 0) {
+                <div class="card p-5">
+                  <p class="text-center text-small text-muted">Ningún paciente coincide con “{{ query() }}”.</p>
+                </div>
+              }
             }
           </div>
         }
@@ -256,6 +306,13 @@ export class DoctorPage {
 
   protected readonly code = signal('');
   protected readonly codeError = signal<string | null>(null);
+  protected readonly query = signal('');
+
+  protected readonly filteredLinks = computed(() => {
+    const q = this.query().trim().toLowerCase();
+    if (!q) return this.links.links();
+    return this.links.links().filter((link) => link.patient_name.toLowerCase().includes(q));
+  });
 
   constructor() {
     this.links.load();
@@ -263,6 +320,10 @@ export class DoctorPage {
 
   protected onCode(event: Event): void {
     this.code.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onQuery(event: Event): void {
+    this.query.set((event.target as HTMLInputElement).value);
   }
 
   protected redeem(): void {

@@ -26,23 +26,27 @@ import type { SegmentOption } from '../../shared/ui/segmented';
       active="perfil"
       profileRoute="/perfil"
     >
-      <main class="page-enter space-y-3">
-        <h1 class="text-h1 font-normal text-ink-strong">
-          Tu cuenta
-        </h1>
-        <section class="card flex items-center gap-4 p-5" aria-label="Tu cuenta">
-          <ui-avatar [name]="userName()" [size]="56" />
+      <main class="page-enter space-y-4">
+        <header>
+          <p class="text-caption font-medium tracking-[0.08em] text-muted">Cuenta</p>
+          <h1 class="mt-2 text-h1 text-ink-strong">
+            Tu cuenta, <span class="accent">en orden</span>.
+          </h1>
+        </header>
+
+        <section class="panel-ink flex items-center gap-4 rounded-[2rem] p-5 sm:p-6" aria-label="Tu cuenta">
+          <ui-avatar [name]="userName()" [size]="64" />
           <div class="min-w-0">
-            <p class="truncate text-h3 font-medium text-ink-strong">{{ userName() }}</p>
-            <p class="truncate text-small text-muted">
+            <p class="truncate text-h3 text-cream">{{ userName() }}</p>
+            <p class="truncate text-small text-cream/65">
               {{ user()?.email }} · {{ user()?.role === 'DOCTOR' ? 'Médico' : 'Paciente' }}
             </p>
           </div>
         </section>
 
         <section class="card p-5" aria-label="Tamaño de la cuadrícula">
-          <h2 class="text-title text-ink-strong">Cuadrícula por lado</h2>
-          <p class="mt-1 text-small text-muted">
+          <h2 class="text-h3 text-ink-strong">Cuadrícula</h2>
+          <p class="mt-1 text-small leading-relaxed text-muted">
             Cambiarla reproyecta tu historial a la nueva cuadrícula.
           </p>
           <div class="mt-4">
@@ -60,26 +64,28 @@ import type { SegmentOption } from '../../shared/ui/segmented';
         </section>
 
         <section class="card p-5" aria-label="Compartir con mi médico">
-          <h2 class="flex items-center gap-2 text-title text-ink-strong">
-            <svg lucideKeyRound [size]="17" aria-hidden="true"></svg>
+          <h2 class="flex items-center gap-2 text-h3 text-ink-strong">
+            <svg lucideKeyRound [size]="19" aria-hidden="true"></svg>
             Compartir con mi médico
           </h2>
-          <p class="mt-1 text-small text-muted">Genera un código de un solo uso, válido 48 h.</p>
+          <p class="mt-1 text-small leading-relaxed text-muted">
+            Genera un código de un solo uso, válido 48 h.
+          </p>
           @if (code(); as c) {
-            <div class="mt-3 flex items-center gap-2 rounded-2xl bg-sand px-5 py-3.5">
-              <p class="flex-1 text-center font-mono text-h3 font-medium tracking-[0.2em] text-ink-strong">
+            <div class="panel-ink mt-4 flex items-center gap-2 rounded-2xl px-4 py-4">
+              <p class="flex-1 text-center font-mono text-h2 tracking-[0.18em] text-cream">
                 {{ c.code }}
               </p>
               <button
                 type="button"
                 aria-label="Copiar código"
                 (click)="copyCode(c.code)"
-                class="pressable focus-ring touch-target w-10 shrink-0 cursor-pointer rounded-full text-ink"
+                class="pressable focus-ring grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-full bg-white/10 text-cream transition-colors hover:bg-white/15"
               >
                 @if (copied()) {
-                  <svg lucideCheck [size]="19" class="mx-auto" aria-hidden="true"></svg>
+                  <svg lucideCheck [size]="19" aria-hidden="true"></svg>
                 } @else {
-                  <svg lucideCopy [size]="19" class="mx-auto" aria-hidden="true"></svg>
+                  <svg lucideCopy [size]="19" aria-hidden="true"></svg>
                 }
               </button>
             </div>
@@ -87,7 +93,7 @@ import type { SegmentOption } from '../../shared/ui/segmented';
             <button
               uiBtn
               type="button"
-              [extraClass]="'mt-3 w-full py-3'"
+              [extraClass]="'mt-4 w-full'"
               [disabled]="links.creating()"
               (click)="generateCode()"
             >
@@ -100,13 +106,16 @@ import type { SegmentOption } from '../../shared/ui/segmented';
           @if (doctors().length > 0) {
             <ul class="mt-4 divide-y divide-line border-t border-line">
               @for (link of doctors(); track link.id) {
-                <li class="flex items-center justify-between gap-2 py-3">
-                  <span class="text-small font-medium text-ink">{{ link.doctor_name }}</span>
+                <li class="flex items-center justify-between gap-3 py-3">
+                  <span class="flex min-w-0 items-center gap-2.5">
+                    <ui-avatar [name]="link.doctor_name" [size]="36" />
+                    <span class="truncate text-small font-medium text-ink">{{ link.doctor_name }}</span>
+                  </span>
                   <button
                     type="button"
                     [disabled]="links.revoking()"
                     (click)="revoke(link.id)"
-                    class="pressable focus-ring shrink-0 cursor-pointer rounded-full px-3 py-2 text-small font-medium text-mz-red disabled:opacity-50"
+                    class="pressable focus-ring touch-target shrink-0 cursor-pointer rounded-full px-3 text-small font-medium text-mz-red transition-colors hover:bg-mz-red-soft disabled:opacity-50"
                   >
                     Revocar
                   </button>
@@ -116,7 +125,13 @@ import type { SegmentOption } from '../../shared/ui/segmented';
           }
         </section>
 
-        <button uiBtn variant="outline" type="button" [extraClass]="'w-full py-3 text-mz-red'" (click)="logout()">
+        <button
+          uiBtn
+          variant="ghost"
+          type="button"
+          [extraClass]="'w-full justify-start text-mz-red hover:bg-mz-red-soft'"
+          (click)="logout()"
+        >
           <svg lucideLogOut [size]="17" aria-hidden="true"></svg>
           Cerrar sesión
         </button>
