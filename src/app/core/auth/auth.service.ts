@@ -9,6 +9,10 @@ export type UserOut = components['schemas']['UserOut'];
 export type TokenResponse = components['schemas']['TokenResponse'];
 export type RegisterRequest = components['schemas']['RegisterRequest'];
 
+export interface GoogleConfig {
+  client_id: string;
+}
+
 const ACCESS_KEY = 'insumap_at';
 
 /** Sesión del usuario: token de acceso en localStorage + refresh con cookie httpOnly. */
@@ -76,6 +80,21 @@ export class AuthService {
 
   register(data: RegisterRequest): Observable<UserOut> {
     return this.api.post<TokenResponse>('/auth/register', data).pipe(
+      tap((t) => {
+        this.setToken(t.access_token);
+        this.user.set(t.user);
+      }),
+      map((t) => t.user),
+    );
+  }
+
+  /** Client ID público de Google; vacío si el backend no lo tiene configurado. */
+  googleConfig(): Observable<GoogleConfig> {
+    return this.api.get<GoogleConfig>('/auth/google/config');
+  }
+
+  loginWithGoogle(credential: string): Observable<UserOut> {
+    return this.api.post<TokenResponse>('/auth/google', { credential }).pipe(
       tap((t) => {
         this.setToken(t.access_token);
         this.user.set(t.user);

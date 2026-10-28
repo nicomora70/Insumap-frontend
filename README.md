@@ -59,3 +59,7 @@ src/app/
 
 Vercel con `vercel.json` (build `npm run build`, salida `dist/insumap-frontend/browser`,
 rewrites de SPA y sin caché para el service worker).
+
+El botón **Continuar con Google** aparece en el login cuando el backend tiene
+`GOOGLE_CLIENT_ID` configurado. El frontend lo consulta en
+`GET /api/v1/auth/google/config`; no requiere rebuild al cambiar el Client ID.

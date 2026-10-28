@@ -6,17 +6,20 @@ import { toApiError } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
 import { UiBtn } from '../../shared/ui/button';
 import { INPUT_CLASS } from '../../shared/ui/classes';
+import { GoogleSignIn } from '../../shared/ui/google-signin';
 import { AuthShell } from './auth-shell';
 
 /** P01: iniciar sesión (HU-20). */
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, UiBtn, AuthShell, LucideEye, LucideEyeOff],
+  imports: [ReactiveFormsModule, RouterLink, UiBtn, AuthShell, GoogleSignIn, LucideEye, LucideEyeOff],
   template: `
     <app-auth-shell
       title="Bienvenido de nuevo"
       subtitle="Entra para ver tu mapa y registrar tus dosis."
     >
+      <app-google-signin (credential)="googleLogin($event)" />
+
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <label for="login-email" class="block text-small font-medium text-ink">Email</label>
         <input
@@ -127,6 +130,19 @@ export class LoginPage {
     this.submitting.set(true);
     const { email, password } = this.form.getRawValue();
     this.auth.login(email.trim().toLowerCase(), password).subscribe({
+      next: () => void this.router.navigateByUrl('/', { replaceUrl: true }),
+      error: (err: unknown) => {
+        this.submitting.set(false);
+        this.serverError.set(toApiError(err).message);
+      },
+    });
+  }
+
+  protected googleLogin(credential: string): void {
+    if (this.submitting()) return;
+    this.serverError.set(null);
+    this.submitting.set(true);
+    this.auth.loginWithGoogle(credential).subscribe({
       next: () => void this.router.navigateByUrl('/', { replaceUrl: true }),
       error: (err: unknown) => {
         this.submitting.set(false);
